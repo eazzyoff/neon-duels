@@ -86,11 +86,11 @@
     <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="menu" class="hidden absolute inset-0 z-50 flex flex-col items-center p-4 md:p-6 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
         <div class="flex justify-between items-center w-full max-w-[95%] px-2 mt-2 md:mt-4">
-            <button onclick="window.openCustomUI()" class="glass-panel px-3 py-2 md:px-5 md:py-3 rounded-2xl text-cyan-400 font-bold hover:bg-cyan-900 hover:bg-opacity-50 transition flex items-center gap-3 border border-cyan-900">
+            <button onclick="window.openCustomUI()" class="glass-panel px-3 py-2 md:px-5 md:py-3 rounded-2xl text-cyan-400 font-bold hover:bg-cyan-900 hover:bg-opacity-50 transition flex items-center gap-3 border border-cyan-900 hover:border-cyan-500">
                 <span id="menuP1Av" class="text-3xl drop-shadow-[0_0_10px_#06b6d4]">🐺</span> <div class="flex flex-col items-start hidden sm:flex"><span class="text-[10px] uppercase text-gray-400">Игрок 1</span><span id="menuP1Name" class="text-sm uppercase tracking-wider">Игрок 1</span></div>
             </button>
             <h1 class="text-4xl md:text-7xl font-black text-gradient tracking-[0.2em] uppercase drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] text-center">АРЕНА 80</h1>
-            <button onclick="window.openCustomUI()" class="glass-panel px-3 py-2 md:px-5 md:py-3 rounded-2xl text-pink-400 font-bold hover:bg-pink-900 hover:bg-opacity-50 transition flex items-center gap-3 border border-pink-900 flex-row-reverse">
+            <button onclick="window.openCustomUI()" class="glass-panel px-3 py-2 md:px-5 md:py-3 rounded-2xl text-pink-400 font-bold hover:bg-pink-900 hover:bg-opacity-50 transition flex items-center gap-3 border border-pink-900 hover:border-pink-500 flex-row-reverse">
                 <span id="menuP2Av" class="text-3xl drop-shadow-[0_0_10px_#ec4899]">🐍</span> <div class="flex flex-col items-end hidden sm:flex"><span class="text-[10px] uppercase text-gray-400">Игрок 2</span><span id="menuP2Name" class="text-sm uppercase tracking-wider">Игрок 2</span></div>
             </button>
         </div>
@@ -155,7 +155,7 @@
 
     <!-- Модуль Игры + Socket.io -->
     <script>
-        // Проверка на локальный запуск (Защита от дурака)
+        // Проверка на локальный запуск
         if (window.location.protocol === 'file:') {
             document.getElementById('fileError').style.display = 'flex';
         }
@@ -167,30 +167,39 @@
         let remoteKeys = { up:false, dn:false, lf:false, rt:false, en:false };
         let lastInputsStr = "", syncCounter = 0;
 
-        // ВСТРОЕННЫЙ ИИ-КОММЕНТАТОР GEMINI API
+        // ВСТРОЕННЫЙ ИИ-КОММЕНТАТОР DEEPSEEK API
         async function fetchAICommentary(gameName) {
-            const apiKey = ""; // API Key предоставляется окружением платформы безопасно
-            const prompt = `Мы играем в мини-игру "${gameName}". Выдай ОДНУ короткую, дерзкую и саркастичную фразу-комментарий для разогрева двух игроков перед боем. Максимум 6-8 слов. Никаких кавычек.`;
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            // ВАЖНО: Вставьте ВАШ полный ключ DeepSeek (начинающийся на sk-) между кавычками ниже:
+            const apiKey = "sk-dIJADeepSeek-standard"; // <-- Замените на реальный ключ
             
-            let delay = 1000;
-            for(let i=0; i<3; i++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            systemInstruction: { parts: [{ text: "Ты злой ИИ-комментатор кибер-турнира. Пиши ОЧЕНЬ коротко." }] }
-                        })
-                    });
-                    if(response.ok) {
-                        const data = await response.json();
-                        return data.candidates?.[0]?.content?.parts?.[0]?.text || "БЕЗ ПОЩАДЫ!";
-                    }
-                } catch(e) {}
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2;
+            const prompt = `Мы играем в мини-игру "${gameName}". Выдай ОДНУ короткую, дерзкую и саркастичную фразу-комментарий для разогрева двух игроков перед боем. Максимум 6-8 слов. Никаких кавычек.`;
+            const url = `https://api.deepseek.com/chat/completions`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            { role: "system", content: "Ты злой ИИ-комментатор кибер-турнира. Пиши ОЧЕНЬ коротко. Без кавычек." },
+                            { role: "user", content: prompt }
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 40
+                    })
+                });
+                if(response.ok) {
+                    const data = await response.json();
+                    return data.choices?.[0]?.message?.content?.trim() || "БЕЗ ПОЩАДЫ!";
+                } else {
+                    console.warn("DeepSeek error. Проверьте ваш API ключ.");
+                }
+            } catch(e) {
+                console.error("AI Network Error:", e);
             }
             return "ВРЕМЯ РАЗРУШЕНИЯ! 🤖";
         }
@@ -203,18 +212,31 @@
             const g1 = document.getElementById('p1AvGrid'), g2 = document.getElementById('p2AvGrid');
             const n1 = document.getElementById('p1NameInput'), n2 = document.getElementById('p2NameInput');
             
-            n1.addEventListener('input', (e) => { window.p1N = e.target.value || 'ИГРОК 1'; window.updateScoreAvatars(); });
-            n2.addEventListener('input', (e) => { window.p2N = e.target.value || 'ИГРОК 2'; window.updateScoreAvatars(); });
+            n1.addEventListener('input', (e) => { 
+                if (isMultiplayer && !isHost) window.p2N = e.target.value || 'ИГРОК 2';
+                else window.p1N = e.target.value || 'ИГРОК 1'; 
+                window.updateScoreAvatars(); 
+            });
+            n2.addEventListener('input', (e) => { 
+                window.p2N = e.target.value || 'ИГРОК 2'; 
+                window.updateScoreAvatars(); 
+            });
 
             EMOJIS.forEach(e => {
                 let b1 = document.createElement('div'); b1.innerText = e; b1.className = 'av-btn cursor-pointer transition flex justify-center hover:scale-125';
                 if(e === window.p1A) b1.classList.add('active');
-                b1.onclick = () => { window.p1A = e; document.getElementById('p1AvPreview').innerText = e; updateAvSelection(g1, b1); };
+                b1.onclick = () => { 
+                    if (isMultiplayer && !isHost) { window.p2A = e; document.getElementById('p1AvPreview').innerText = e; }
+                    else { window.p1A = e; document.getElementById('p1AvPreview').innerText = e; }
+                    updateAvSelection(g1, b1); 
+                };
                 g1.appendChild(b1);
 
                 let b2 = document.createElement('div'); b2.innerText = e; b2.className = 'av-btn cursor-pointer transition flex justify-center hover:scale-125';
                 if(e === window.p2A) b2.classList.add('active');
-                b2.onclick = () => { window.p2A = e; document.getElementById('p2AvPreview').innerText = e; updateAvSelection(g2, b2); };
+                b2.onclick = () => { 
+                    window.p2A = e; document.getElementById('p2AvPreview').innerText = e; updateAvSelection(g2, b2); 
+                };
                 g2.appendChild(b2);
             });
             window.updateScoreAvatars();
@@ -226,16 +248,12 @@
             window.updateScoreAvatars();
         }
         
+        // Исправлена синхронизация: функция теперь ТОЛЬКО обновляет UI
         window.updateScoreAvatars = () => {
             document.getElementById('score1Av').innerText = window.p1A; document.getElementById('score2Av').innerText = window.p2A;
             document.getElementById('menuP1Av').innerText = window.p1A; document.getElementById('menuP2Av').innerText = window.p2A;
             document.getElementById('score1Name').innerText = window.p1N; document.getElementById('score2Name').innerText = window.p2N;
             document.getElementById('menuP1Name').innerText = window.p1N; document.getElementById('menuP2Name').innerText = window.p2N;
-            
-            if(isMultiplayer && socket) {
-                if(isHost) socket.emit('gameData', { type:'profile', a:window.p1A, n:window.p1N });
-                else socket.emit('gameData', { type:'profile', a:window.p1A, n:window.p1N }); 
-            }
         };
         
         window.closeCustomUI = () => { document.getElementById('customUI').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
@@ -259,6 +277,7 @@
             btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[btn.dataset.key] = false; sendNetInputs(); btn.classList.remove('bg-gray-600'); });
         });
 
+        // Управление всегда отзеркаливается корректно
         const kw=()=> isMultiplayer && !isHost ? false : keys['KeyW'];
         const ks=()=> isMultiplayer && !isHost ? false : keys['KeyS'];
         const ka=()=> isMultiplayer && !isHost ? false : keys['KeyA'];
@@ -283,7 +302,6 @@
         const circ = (x,y,r,c,b=15,a=1) => { ctx.save(); ctx.globalAlpha=a; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.shadowBlur=b; ctx.shadowColor=c; ctx.fillStyle=c; ctx.fill(); ctx.restore(); };
         const line = (x1,y1,x2,y2,c,w=5,b=15,a=1) => { ctx.save(); ctx.globalAlpha=a; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.strokeStyle=c; ctx.lineWidth=w; ctx.lineCap='round'; ctx.shadowBlur=b; ctx.shadowColor=c; ctx.stroke(); ctx.restore(); };
         
-        // КРАСИВЫЕ ГРАФИЧЕСКИЕ МОДЕЛИ
         const drawA = (p, o, sz=70) => { 
             ctx.save(); ctx.font=sz+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; 
             let bob = Math.sin(globalTm*0.15 + (p*Math.PI))*8; 
@@ -298,20 +316,20 @@
 
         function drawTank(x, y, angle, color) {
             ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
-            ctx.fillStyle = '#111'; ctx.fillRect(-30, -25, 60, 15); ctx.fillRect(-30, 10, 60, 15); // Гусеницы
+            ctx.fillStyle = '#111'; ctx.fillRect(-30, -25, 60, 15); ctx.fillRect(-30, 10, 60, 15); 
             ctx.shadowBlur = 20; ctx.shadowColor = color; ctx.fillStyle = color;
-            ctx.fillRect(-25, -15, 50, 30); // Корпус
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill(); // Башня
-            ctx.fillRect(0, -5, 45, 10); // Дуло
+            ctx.fillRect(-25, -15, 50, 30); 
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill(); 
+            ctx.fillRect(0, -5, 45, 10); 
             ctx.restore();
         }
 
         function drawShip(x, y, color, angle) {
             ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
             ctx.shadowBlur = 20; ctx.shadowColor = color; ctx.fillStyle = color;
-            ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-20, 20); ctx.lineTo(-10, 0); ctx.lineTo(-20, -20); ctx.fill(); // Крылья
-            ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(-5, 0, 6, 0, Math.PI*2); ctx.fill(); // Кабина
-            ctx.shadowColor = '#0ff'; ctx.fillStyle = '#fff'; ctx.fillRect(-25, -5, 10, 10); // Двигатель
+            ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-20, 20); ctx.lineTo(-10, 0); ctx.lineTo(-20, -20); ctx.fill(); 
+            ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(-5, 0, 6, 0, Math.PI*2); ctx.fill(); 
+            ctx.shadowColor = '#0ff'; ctx.fillStyle = '#fff'; ctx.fillRect(-25, -5, 10, 10); 
             ctx.restore();
         }
 
@@ -319,10 +337,10 @@
             ctx.save(); ctx.translate(x, y);
             let bob = Math.sin(globalTm*0.1)*5; ctx.translate(0, bob);
             ctx.shadowBlur = 20; ctx.shadowColor = color; ctx.fillStyle = color;
-            ctx.beginPath(); ctx.arc(0, 10, 25, Math.PI, 0); ctx.lineTo(20, 35); ctx.lineTo(-20, 35); ctx.fill(); // Мантия
-            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(-25, 10); ctx.lineTo(25, 10); ctx.lineTo(0, -35); ctx.fill(); // Шляпа
+            ctx.beginPath(); ctx.arc(0, 10, 25, Math.PI, 0); ctx.lineTo(20, 35); ctx.lineTo(-20, 35); ctx.fill(); 
+            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(-25, 10); ctx.lineTo(25, 10); ctx.lineTo(0, -35); ctx.fill(); 
             ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
-            ctx.beginPath(); ctx.arc(-7, 0, 4, 0, Math.PI*2); ctx.arc(7, 0, 4, 0, Math.PI*2); ctx.fill(); // Глаза
+            ctx.beginPath(); ctx.arc(-7, 0, 4, 0, Math.PI*2); ctx.arc(7, 0, 4, 0, Math.PI*2); ctx.fill(); 
             ctx.restore();
         }
 
@@ -374,7 +392,7 @@
             else spawnParticles(W/2, H/2, CN, 200);
 
             updateStars();
-            document.getElementById('aiCommentary').innerText = ""; // Очищаем коммент
+            document.getElementById('aiCommentary').innerText = ""; 
 
             setTimeout(() => {
                 overlay.classList.remove('hidden');
@@ -397,7 +415,6 @@
             titleEl.className = "text-5xl md:text-8xl font-black text-white mb-6 uppercase tracking-[0.1em] text-gradient text-center px-4 drop-shadow-[0_0_30px_rgba(6,182,212,0.6)] leading-tight";
             titleEl.innerText = games[currentId].n; descEl.innerText = games[currentId].d;
             
-            // ИИ Комментатор
             const aiBox = document.getElementById('aiCommentary');
             aiBox.innerText = "ИИ оценивает шансы... 🤖";
             if (!isMultiplayer || isHost) {
@@ -418,7 +435,7 @@
                 if(count > 0) { countdownEl.innerText = count; doShake(5); }
                 else if (count === 0) { countdownEl.innerText = "БОЙ!"; doShake(15); }
                 else { clearInterval(iv); overlay.classList.add('hidden'); gameState = 'PLAY'; }
-            }, 1000); // Чуть замедлили отсчет, чтобы ИИ успел загрузиться
+            }, 1000);
         }
 
         // --- БАЗА ИГР (ПРОРАБОТАННЫЕ МОДЕЛИ) ---
@@ -542,10 +559,11 @@
             { n: "Минное Поле", d: "Иди ВПРАВО. Не наступи на мины 💣!", i:()=>{o1={x:150,y:150};o2={x:150,y:H-150};a1=[];for(let i=0;i<60;i++)a1.push({x:rnd(W-300)+150,y:rnd(H-300)+150});}, u:()=>{ m1(o1,11); m2(o2,11); cl(o1); cl(o2); let d1=false,d2=false; a1.forEach(m=>{if(D(m,o1)<55){d1=true;spawnParticles(m.x,m.y,'#ef4444',40,'💥');doShake(10);}if(D(m,o2)<55){d2=true;spawnParticles(m.x,m.y,'#ef4444',40,'💥');doShake(10);}}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); if(o1.x>W-150)winRound(1);else if(o2.x>W-150)winRound(2); }, r:()=>{ rect(W-150,0,150,H,'#22c55e',30,0.5); drawA(1,o1,90); drawA(2,o2,90); a1.forEach(m=>E('💣',m.x,m.y,50)); } },
             { n: "Сбор Яблок", d: "Лови только 🍎 фрукты, избегай бомб!", i:()=>{o1={x:400,y:H-100,s:0};o2={x:1200,y:H-100,s:0};a1=[];tm=900;}, u:()=>{ if(ka())o1.x-=22;if(kd())o1.x+=22; if(kl())o2.x-=22;if(kr())o2.x+=22; cl(o1); cl(o2); if(Math.random()<0.15)a1.push({x:rnd(W-100)+50,y:-20,e:Math.random()>.25?'🍎':'💣'}); a1=a1.filter(a=>{a.y+=13;if(a.y>H-140&&Math.abs(a.x-o1.x)<80){if(a.e==='🍎')o1.s++;else {o1.s-=3;doShake(12);}spawnParticles(a.x,a.y,a.e==='🍎'?'#22c55e':'#ef4444',15,a.e);return false;}if(a.y>H-140&&Math.abs(a.x-o2.x)<80){if(a.e==='🍎')o2.s++;else {o2.s-=3;doShake(12);}spawnParticles(a.x,a.y,a.e==='🍎'?'#22c55e':'#ef4444',15,a.e);return false;}return a.y<H;}); if(--tm<=0){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(a=>E(a.e,a.x,a.y,60)); drawA(1,o1,140); drawA(2,o2,140); txt(Math.ceil(tm/60),W/2,120,100); ctx.fillStyle=C1;txt(o1.s,150,120,100); ctx.fillStyle=C2;txt(o2.s,W-150,120,100); } },
             { n: "Стена Смерти", d: "Стена двигается! Спамь Space / Enter чтобы выжить.", i:()=>{o1={p:W/2};tm=900;}, u:()=>{ if(sp()){o1.p+=35;keys['Space']=false;spawnParticles(o1.p,rnd(H),C1,8,'⚡️');doShake(5);} if(en()){o1.p-=35;keys['Enter']=false;spawnParticles(o1.p,rnd(H),C2,8,'⚡️');doShake(5);} if(--tm<=0||o1.p<0||o1.p>W){if(o1.p>W/2)winRound(1);else if(o1.p<W/2)winRound(2);else winRound(0);} }, r:()=>{ rect(0,0,o1.p,H,C1,0,0.5); rect(o1.p,0,W-o1.p,H,C2,0,0.5); line(o1.p,0,o1.p,H,'#fff',40,60); txt(Math.ceil(tm/60),W/2,150,120); drawA(1,{x:o1.p/2,y:H/2},300); drawA(2,{x:o1.p+(W-o1.p)/2,y:H/2},300); } },
-            { n: "Отравитель", d: "Касайся кубов чтобы закрасить их в свой цвет! 🎨", i:()=>{a1=[];for(let i=0;i<50;i++)a1.push({x:rnd(W-150)+75,y:rnd(H-150)+75,c:0});o1={x:150,y:H/2};o2={x:1450,y:H/2};tm=900;}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); a1.forEach(b=>{if(D(b,o1)<85){b.c=1;spawnParticles(b.x,b.y,C1,2);} if(D(b,o2)<85){b.c=2;spawnParticles(b.x,b.y,C2,2);}}); if(--tm<=0){let s1=a1.filter(b=>b.c===1).length, s2=a1.filter(b=>b.c===2).length; if(s1>s2)winRound(1);else if(s2>s1)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(b=>{rect(b.x-35,b.y-35,70,70,b.c===1?C1:b.c===2?C2:'#555',20,0.95);}); drawA(1,o1,100); drawA(2,o2,100); txt(Math.ceil(tm/60),W/2,120,100); } }
+            { n: "Отравитель", d: "Касайся кубов чтобы закрасить их в свой цвет! 🎨", i:()=>{a1=[];for(let i=0;i<50;i++)a1.push({x:rnd(W-150)+75,y:rnd(H-150)+75,c:0});o1={x:150,y:H/2};o2={x:1450,y:H/2};tm=900;}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); a1.forEach(b=>{if(D(b,o1)<85){b.c=1;} if(D(b,o2)<85){b.c=2;}}); if(--tm<=0){let s1=a1.filter(b=>b.c===1).length, s2=a1.filter(b=>b.c===2).length; if(s1>s2)winRound(1);else if(s2>s1)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(b=>{rect(b.x-35,b.y-35,70,70,b.c===1?C1:b.c===2?C2:'#555',20,0.95);}); drawA(1,o1,100); drawA(2,o2,100); txt(Math.ceil(tm/60),W/2,120,100); } }
         ];
 
-        // Клонируем 40 базовых игр для создания 80 вариаций (Хардкор-версии с удвоенной скоростью)
+        // Копируем массивы, чтобы добить до 80 (если 40 базовых, будет 80). 
+        // В нашем массиве сейчас ровно 40 элементов (4 раздела по 10). Значит всего будет 80 игр.
         const baseGamesCount = games.length;
         for(let i=0; i < baseGamesCount; i++) {
             let baseGame = games[i];
@@ -594,6 +612,7 @@
 
         // --- СЕТЕВАЯ ЛОГИКА (P2P PEERJS) ---
         window.createRoom = () => {
+            if(!socket) { alert("Сервер недоступен! Игра работает в локальном режиме."); return; }
             document.getElementById('netModalTitle').innerText = "Создание...";
             document.getElementById('netModalDesc').classList.remove('hidden');
             document.getElementById('netRoomCode').innerText = "---";
@@ -602,36 +621,79 @@
             document.getElementById('loader').classList.remove('hidden');
             document.getElementById('netModal').style.display = 'flex';
 
-            const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
-            try {
-                peer = new Peer('neon-ru-v80-' + randomCode, peerConfig);
-                peer.on('open', (id) => {
-                    document.getElementById('netModalTitle').innerText = "Ожидание друга...";
-                    document.getElementById('netRoomCode').innerText = randomCode;
-                    document.getElementById('loader').classList.add('hidden');
-                    isHost = true; isMultiplayer = true;
-                    document.getElementById('localLegend').classList.add('hidden');
-                    document.getElementById('onlineLegend').classList.remove('hidden');
-                    document.getElementById('onlineLegend').innerText = "Онлайн (P2P): ВЫ ХОСТ. ВЫБЕРИТЕ ИГРУ.";
-                });
-                peer.on('connection', (connection) => {
-                    conn = connection;
-                    conn.on('open', () => { conn.send({ type: 'init', p1A: window.p1A, p1N: window.p1N }); window.closeNetModal(); });
-                    conn.on('data', (data) => {
-                        if (data.type === 'inputs') remoteKeys = data.inputs;
-                        if (data.type === 'profile') { window.p2A = data.a; window.p2N = data.n; window.updateScoreAvatars(); }
-                        if (data.type === 'returnToMenu') window.executeBackToMenu();
-                        if (data.type === 'aiChat') document.getElementById('aiCommentary').innerText = `«${data.text}»`;
-                    });
-                });
-                peer.on('error', (err) => {
-                    document.getElementById('netModalTitle').innerText = "Ошибка сети"; document.getElementById('netRoomCode').innerText = "ERR"; document.getElementById('loader').classList.add('hidden');
-                    document.getElementById('netModalDesc').innerHTML = "WebSockets заблокированы.<br><br><b>Откройте скачанный HTML файл напрямую в браузере.</b>";
-                });
-            } catch (e) { alert("Ошибка инициализации P2P. Попробуйте скачать файл."); }
+            socket.emit('createRoom');
         };
 
+        if(socket) {
+            socket.on('roomCreated', (id) => {
+                document.getElementById('netModalTitle').innerText = "Ожидание друга...";
+                document.getElementById('netRoomCode').innerText = id;
+                document.getElementById('loader').classList.add('hidden');
+                isHost = true; isMultiplayer = true;
+                document.getElementById('localLegend').classList.add('hidden');
+                document.getElementById('onlineLegend').classList.remove('hidden');
+                document.getElementById('onlineLegend').innerText = "Онлайн (Сервер): ВЫ ХОСТ. ВЫБЕРИТЕ ИГРУ.";
+            });
+
+            socket.on('clientJoined', () => {
+                // Отправляем свой профиль хоста клиенту
+                socket.emit('gameData', { type: 'hostProfile', p1A: window.p1A, p1N: window.p1N }); 
+                window.closeNetModal();
+            });
+
+            socket.on('joinedRoom', (id) => {
+                isHost = false; isMultiplayer = true;
+                // Я клиент, переношу свой локальный профиль в слот P2
+                window.p2A = window.p1A;
+                window.p2N = window.p1N;
+                
+                // Отправляю хосту свой клиентский профиль
+                socket.emit('gameData', { type: 'clientProfile', p2A: window.p2A, p2N: window.p2N }); 
+                
+                document.getElementById('localLegend').classList.add('hidden');
+                document.getElementById('onlineLegend').classList.remove('hidden');
+                document.getElementById('onlineLegend').innerText = "Онлайн (Сервер): Ожидайте выбора игры хостом...";
+                document.getElementById('p2CustomBlock').classList.add('hidden');
+                window.closeNetModal();
+                window.updateScoreAvatars();
+            });
+
+            socket.on('gameData', (data) => {
+                if (data.type === 'hostProfile') { 
+                    window.p1A = data.p1A; 
+                    window.p1N = data.p1N; 
+                    window.updateScoreAvatars(); 
+                }
+                if (data.type === 'clientProfile') {
+                    window.p2A = data.p2A; 
+                    window.p2N = data.p2N; 
+                    window.updateScoreAvatars(); 
+                }
+                if (data.type === 'sync') applyNetworkState(data.state);
+                if (data.type === 'returnToMenu') window.executeBackToMenu();
+                if (data.type === 'inputs') remoteKeys = data.inputs;
+                if (data.type === 'aiChat') document.getElementById('aiCommentary').innerText = `«${data.text}»`;
+            });
+
+            socket.on('errorMsg', (msg) => {
+                alert(msg);
+                document.getElementById('netActionBtn').innerText = "Присоединиться";
+                document.getElementById('netActionBtn').classList.remove('hidden');
+                document.getElementById('loader').classList.add('hidden');
+            });
+
+            socket.on('peerDisconnected', () => {
+                alert("Соперник отключился от комнаты!");
+                window.executeBackToMenu();
+                document.getElementById('localLegend').classList.remove('hidden');
+                document.getElementById('onlineLegend').classList.add('hidden');
+                isMultiplayer = false; isHost = false;
+                document.getElementById('p2CustomBlock').classList.remove('hidden');
+            });
+        }
+
         window.showJoinModal = () => {
+            if(!socket) { alert("Сервер недоступен!"); return; }
             document.getElementById('netModalTitle').innerText = "Войти в игру";
             document.getElementById('loader').classList.add('hidden');
             document.getElementById('netModalDesc').classList.add('hidden');
@@ -647,48 +709,25 @@
             document.getElementById('netActionBtn').classList.add('hidden');
             document.getElementById('loader').classList.remove('hidden');
             document.getElementById('netModalTitle').innerText = "Подключение...";
-            try {
-                peer = new Peer(peerConfig);
-                peer.on('open', () => {
-                    conn = peer.connect('neon-ru-v80-' + id);
-                    conn.on('open', () => {
-                        isHost = false; isMultiplayer = true;
-                        conn.send({ type: 'profile', a: window.p1A, n: window.p1N });
-                        document.getElementById('localLegend').classList.add('hidden');
-                        document.getElementById('onlineLegend').classList.remove('hidden');
-                        document.getElementById('onlineLegend').innerText = "Онлайн (P2P): Ожидайте выбора игры хостом...";
-                        document.getElementById('p2CustomBlock').classList.add('hidden');
-                        window.closeNetModal();
-                    });
-                    conn.on('data', (data) => {
-                        if (data.type === 'init') { window.p2A = window.p1A; window.p2N = window.p1N; window.p1A = data.p1A; window.p1N = data.p1N; window.updateScoreAvatars(); }
-                        if (data.type === 'sync') applyNetworkState(data.state);
-                        if (data.type === 'returnToMenu') window.executeBackToMenu();
-                        if (data.type === 'profile') { window.p1A = data.a; window.p1N = data.n; window.updateScoreAvatars(); }
-                        if (data.type === 'aiChat') document.getElementById('aiCommentary').innerText = `«${data.text}»`;
-                    });
-                    conn.on('error', () => { alert("Ошибка связи!"); window.closeNetModal(); });
-                });
-                peer.on('error', () => { alert("Комната не найдена!"); window.closeNetModal(); });
-            } catch (e) { alert("Ошибка P2P. Откройте файл напрямую."); }
+            socket.emit('joinRoom', id);
         };
 
         window.closeNetModal = () => { document.getElementById('netModal').style.display = 'none'; };
 
         function sendNetState() {
-            if(!isMultiplayer || !isHost || !conn || !conn.open) return;
-            syncCounter++; if(syncCounter % 2 !== 0) return; // Ускоренная синхронизация (30fps)
-            conn.send({
+            if(!isMultiplayer || !isHost || !socket) return;
+            syncCounter++; if(syncCounter % 2 !== 0) return; 
+            socket.emit('gameData', {
                 type: 'sync',
                 state: { cId: currentId, gs: gameState, p1: p1Score, p2: p2Score, o1: o1, o2: o2, o3: o3, a1: a1, a2: a2, gt: globalTm, sh: shake, t: titleEl.innerText, d: descEl.innerText, c: countdownEl.innerText, pr: particles.slice(0,8) }
             });
         }
 
         function sendNetInputs() {
-            if(!isMultiplayer || isHost || !conn || !conn.open) return;
+            if(!isMultiplayer || isHost || !socket) return;
             let current = { up: keys['ArrowUp']||keys['KeyW'], dn: keys['ArrowDown']||keys['KeyS'], lf: keys['ArrowLeft']||keys['KeyA'], rt: keys['ArrowRight']||keys['KeyD'], en: keys['Enter']||keys['Space'] };
             let str = JSON.stringify(current);
-            if(str !== lastInputsStr) { lastInputsStr = str; conn.send({ type: 'inputs', inputs: current }); }
+            if(str !== lastInputsStr) { lastInputsStr = str; socket.emit('gameData', { type: 'inputs', inputs: current }); }
         }
 
         function applyNetworkState(s) {
@@ -698,11 +737,26 @@
             }
             gameState = s.gs; currentId = s.cId; p1Score = s.p1; p2Score = s.p2;
             
-            // Плавная интерполяция
-            if(o1.x && s.o1.x) { o1.x += (s.o1.x - o1.x)*0.5; o1.y += (s.o1.y - o1.y)*0.5; } else o1 = s.o1||{};
-            if(o2.x && s.o2.x) { o2.x += (s.o2.x - o2.x)*0.5; o2.y += (s.o2.y - o2.y)*0.5; } else o2 = s.o2||{};
+            // ИДЕАЛЬНОЕ СГЛАЖИВАНИЕ - НЕ СЪЕДАЕТ УГЛЫ
+            if (o1 && o1.x !== undefined && s.o1 && s.o1.x !== undefined) {
+                s.o1.x = o1.x + (s.o1.x - o1.x) * 0.5;
+                s.o1.y = o1.y + (s.o1.y - o1.y) * 0.5;
+            }
+            o1 = s.o1 || {};
             
-            o3 = s.o3||{}; a1 = s.a1||[]; a2 = s.a2||[]; globalTm = s.gt; shake = s.sh;
+            if (o2 && o2.x !== undefined && s.o2 && s.o2.x !== undefined) {
+                s.o2.x = o2.x + (s.o2.x - o2.x) * 0.5;
+                s.o2.y = o2.y + (s.o2.y - o2.y) * 0.5;
+            }
+            o2 = s.o2 || {};
+
+            if (o3 && o3.x !== undefined && s.o3 && s.o3.x !== undefined) {
+                s.o3.x = o3.x + (s.o3.x - o3.x) * 0.5;
+                s.o3.y = o3.y + (s.o3.y - o3.y) * 0.5;
+            }
+            o3 = s.o3 || {};
+            
+            a1 = s.a1||[]; a2 = s.a2||[]; globalTm = s.gt; shake = s.sh;
             if(s.pr && s.pr.length > 0) particles = s.pr;
 
             if (gameState === 'READY' || gameState === 'END') {
