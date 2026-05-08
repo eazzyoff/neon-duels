@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Неоновые Дуэли: ИИ Арена</title>
+    <title>Неоновые Дуэли: 80 Игр (Оптимизировано)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
@@ -144,11 +144,10 @@
             </div>
         </div>
 
-        <!-- Экран старта / Окончания + ИИ Комментатор -->
+        <!-- Экран старта / Окончания -->
         <div id="roundOverlay" class="absolute inset-0 bg-black bg-opacity-85 backdrop-blur-lg z-40 flex flex-col justify-center items-center transition-opacity duration-300">
             <h2 id="roundTitle" class="text-5xl md:text-8xl font-black text-white mb-6 uppercase tracking-[0.1em] text-gradient text-center px-4 drop-shadow-[0_0_30px_rgba(6,182,212,0.6)] leading-tight">Название</h2>
-            <p id="roundDesc" class="text-xl md:text-3xl text-gray-300 mb-6 max-w-3xl text-center px-4 font-bold tracking-widest leading-relaxed border-t border-b border-gray-800 py-4">Описание.</p>
-            <div id="aiCommentary" class="text-xl md:text-3xl text-pink-400 mb-8 font-mono italic drop-shadow-[0_0_15px_rgba(236,72,153,0.8)] min-h-[40px] text-center px-8 transition-opacity">ИИ настраивает микрофон... 🤖</div>
+            <p id="roundDesc" class="text-xl md:text-3xl text-gray-300 mb-12 max-w-3xl text-center px-4 font-bold tracking-widest leading-relaxed border-t border-b border-gray-800 py-4">Описание.</p>
             <div id="countdown" class="text-[8rem] md:text-[15rem] font-black text-white drop-shadow-[0_0_50px_rgba(255,255,255,1)] mb-8"></div>
         </div>
     </div>
@@ -166,34 +165,6 @@
         let isMultiplayer = false, isHost = false;
         let remoteKeys = { up:false, dn:false, lf:false, rt:false, en:false };
         let lastInputsStr = "", syncCounter = 0;
-
-        // ВСТРОЕННЫЙ ИИ-КОММЕНТАТОР GEMINI API
-        async function fetchAICommentary(gameName) {
-            const apiKey = ""; // API Key предоставляется окружением платформы безопасно
-            const prompt = `Мы играем в мини-игру "${gameName}". Выдай ОДНУ короткую, дерзкую и саркастичную фразу-комментарий для разогрева двух игроков перед боем. Максимум 6-8 слов. Никаких кавычек.`;
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            let delay = 1000;
-            for(let i=0; i<3; i++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            systemInstruction: { parts: [{ text: "Ты злой ИИ-комментатор кибер-турнира. Пиши ОЧЕНЬ коротко." }] }
-                        })
-                    });
-                    if(response.ok) {
-                        const data = await response.json();
-                        return data.candidates?.[0]?.content?.parts?.[0]?.text || "БЕЗ ПОЩАДЫ!";
-                    }
-                } catch(e) {}
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2;
-            }
-            return "ВРЕМЯ РАЗРУШЕНИЯ! 🤖";
-        }
 
         const EMOJIS = ['🐺','🐍','🐯','🐉','🦂','🦅','🦈','🦖','🦇','🦍','😈','💀','👽','🤖','👻','🎃','🔥','⚡️','🧊','🌪️','🦊','🐼','🦄','🐙'];
         window.p1A = '🐺'; window.p2A = '🐍';
@@ -282,8 +253,8 @@
         const rect = (x,y,w,h,c,b=15,a=1) => { ctx.save(); ctx.globalAlpha=a; ctx.shadowBlur=b; ctx.shadowColor=c; ctx.fillStyle=c; ctx.fillRect(x,y,w,h); ctx.restore(); };
         const circ = (x,y,r,c,b=15,a=1) => { ctx.save(); ctx.globalAlpha=a; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.shadowBlur=b; ctx.shadowColor=c; ctx.fillStyle=c; ctx.fill(); ctx.restore(); };
         const line = (x1,y1,x2,y2,c,w=5,b=15,a=1) => { ctx.save(); ctx.globalAlpha=a; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.strokeStyle=c; ctx.lineWidth=w; ctx.lineCap='round'; ctx.shadowBlur=b; ctx.shadowColor=c; ctx.stroke(); ctx.restore(); };
+        const txt = (t,x,y,s=40,c='#fff',b=10) => { ctx.save(); ctx.fillStyle=c; ctx.font=`800 ${s}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.shadowBlur=b; ctx.shadowColor=c; ctx.fillText(t,x,y); ctx.restore(); };
         
-        // КРАСИВЫЕ ГРАФИЧЕСКИЕ МОДЕЛИ
         const drawA = (p, o, sz=70) => { 
             ctx.save(); ctx.font=sz+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; 
             let bob = Math.sin(globalTm*0.15 + (p*Math.PI))*8; 
@@ -296,40 +267,10 @@
             ctx.restore(); 
         };
 
-        function drawTank(x, y, angle, color) {
-            ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
-            ctx.fillStyle = '#111'; ctx.fillRect(-30, -25, 60, 15); ctx.fillRect(-30, 10, 60, 15); // Гусеницы
-            ctx.shadowBlur = 20; ctx.shadowColor = color; ctx.fillStyle = color;
-            ctx.fillRect(-25, -15, 50, 30); // Корпус
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill(); // Башня
-            ctx.fillRect(0, -5, 45, 10); // Дуло
-            ctx.restore();
-        }
-
-        function drawShip(x, y, color, angle) {
-            ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
-            ctx.shadowBlur = 20; ctx.shadowColor = color; ctx.fillStyle = color;
-            ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-20, 20); ctx.lineTo(-10, 0); ctx.lineTo(-20, -20); ctx.fill(); // Крылья
-            ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(-5, 0, 6, 0, Math.PI*2); ctx.fill(); // Кабина
-            ctx.shadowColor = '#0ff'; ctx.fillStyle = '#fff'; ctx.fillRect(-25, -5, 10, 10); // Двигатель
-            ctx.restore();
-        }
-
-        function drawWizard(x, y, color) {
-            ctx.save(); ctx.translate(x, y);
-            let bob = Math.sin(globalTm*0.1)*5; ctx.translate(0, bob);
-            ctx.shadowBlur = 20; ctx.shadowColor = color; ctx.fillStyle = color;
-            ctx.beginPath(); ctx.arc(0, 10, 25, Math.PI, 0); ctx.lineTo(20, 35); ctx.lineTo(-20, 35); ctx.fill(); // Мантия
-            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(-25, 10); ctx.lineTo(25, 10); ctx.lineTo(0, -35); ctx.fill(); // Шляпа
-            ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
-            ctx.beginPath(); ctx.arc(-7, 0, 4, 0, Math.PI*2); ctx.arc(7, 0, 4, 0, Math.PI*2); ctx.fill(); // Глаза
-            ctx.restore();
-        }
-
         function addTrail(x, y, color, size) { trails.push({x, y, c: color, s: size, a: 0.4}); }
-        function drawTrails() { trails.forEach(t => { circ(t.x, t.y, t.s, t.c, 15, t.a); t.a -= 0.03; }); trails = trails.filter(t => t.a > 0); }
+        function drawTrails() { trails.forEach(t => { circ(t.x, t.y, t.s, t.c, 15, t.a); t.a -= 0.05; }); trails = trails.filter(t => t.a > 0); }
 
-        function spawnParticles(x, y, color, count=30, isEmoji=null) {
+        function spawnParticles(x, y, color, count=10, isEmoji=null) {
             for(let i=0; i<count; i++) { 
                 let a = rnd(Math.PI*2), s = rnd(15)+5; 
                 particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 1, c: color, s: rnd(8)+4, e: isEmoji }); 
@@ -337,9 +278,9 @@
         }
         function updateDrawParticles() {
             particles.forEach(p => { 
-                p.x+=p.vx; p.y+=p.vy; p.life-=0.02; 
+                p.x+=p.vx; p.y+=p.vy; p.life-=0.03; 
                 if(p.life>0) {
-                    if(p.e) { ctx.save(); ctx.globalAlpha=p.life; ctx.font=`${p.s*3}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.e, p.x, p.y); ctx.restore(); }
+                    if(p.e) { ctx.globalAlpha=p.life; ctx.font=`${p.s*3}px sans-serif`; ctx.fillText(p.e, p.x, p.y); ctx.globalAlpha=1; }
                     else rect(p.x, p.y, p.s, p.s, p.c, 15, p.life); 
                 }
             });
@@ -347,7 +288,7 @@
         }
 
         function drawDynamicBg(gameObj) {
-            ctx.strokeStyle = 'rgba(6, 182, 212, 0.08)'; ctx.lineWidth = 2; let offset = (globalTm * 2) % 80; ctx.beginPath();
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.05)'; ctx.lineWidth = 2; let offset = (globalTm * 2) % 80; ctx.beginPath();
             for(let i=0; i<W; i+=80) { ctx.moveTo(i, offset); ctx.lineTo(i, H); }
             for(let i=0; i<H; i+=80) { ctx.moveTo(offset, i); ctx.lineTo(W, i); }
             ctx.stroke();
@@ -367,14 +308,12 @@
         function winRound(player) {
             if(gameState !== 'PLAY') return;
             gameState = 'END';
-            doShake(35);
+            doShake(10); // Уменьшена тряска экрана
             
-            if(player === 1) { p1Score++; spawnParticles(o1.x||W/4, o1.y||H/2, C1, 200, window.p1A); }
-            else if(player === 2) { p2Score++; spawnParticles(o2.x||W*0.75, o2.y||H/2, C2, 200, window.p2A); }
-            else spawnParticles(W/2, H/2, CN, 200);
+            if(player === 1) p1Score++;
+            else if(player === 2) p2Score++;
 
             updateStars();
-            document.getElementById('aiCommentary').innerText = ""; // Очищаем коммент
 
             setTimeout(() => {
                 overlay.classList.remove('hidden');
@@ -387,27 +326,15 @@
                     titleEl.innerText = player===1 ? window.p1N+" ВЗЯЛ РАУНД!" : player===2 ? window.p2N+" ВЗЯЛ РАУНД!" : "НИЧЬЯ!";
                     titleEl.className = "text-5xl md:text-8xl font-black text-white mb-6 uppercase tracking-[0.2em] text-center px-4 drop-shadow-[0_0_30px_#fff]";
                     descEl.innerText = "Приготовьтесь..."; countdownEl.innerText = "";
-                    setTimeout(startNextRound, 2500);
+                    setTimeout(startNextRound, 2000);
                 }
-            }, 1200);
+            }, 800); // Ускорен переход
         }
 
         function startNextRound() {
             overlay.classList.remove('hidden');
             titleEl.className = "text-5xl md:text-8xl font-black text-white mb-6 uppercase tracking-[0.1em] text-gradient text-center px-4 drop-shadow-[0_0_30px_rgba(6,182,212,0.6)] leading-tight";
             titleEl.innerText = games[currentId].n; descEl.innerText = games[currentId].d;
-            
-            // ИИ Комментатор
-            const aiBox = document.getElementById('aiCommentary');
-            aiBox.innerText = "ИИ оценивает шансы... 🤖";
-            if (!isMultiplayer || isHost) {
-                fetchAICommentary(games[currentId].n).then(text => {
-                    let cleanText = text.replace(/["«»]/g, '').trim();
-                    aiBox.innerText = `«${cleanText}»`;
-                    if (isMultiplayer && socket) socket.emit('gameData', {type: 'aiChat', text: cleanText});
-                });
-            }
-
             let count = 3; countdownEl.innerText = count;
             gameState = 'READY';
             games[currentId].i();
@@ -415,137 +342,64 @@
 
             let iv = setInterval(() => {
                 count--;
-                if(count > 0) { countdownEl.innerText = count; doShake(5); }
-                else if (count === 0) { countdownEl.innerText = "БОЙ!"; doShake(15); }
+                if(count > 0) { countdownEl.innerText = count; doShake(3); }
+                else if (count === 0) { countdownEl.innerText = "БОЙ!"; doShake(10); }
                 else { clearInterval(iv); overlay.classList.add('hidden'); gameState = 'PLAY'; }
-            }, 1000); // Чуть замедлили отсчет, чтобы ИИ успел загрузиться
+            }, 800);
         }
 
-        // --- БАЗА ИГР (ПРОРАБОТАННЫЕ МОДЕЛИ) ---
+        // --- БАЗА ИГР ---
         let o1={}, o2={}, o3={}, a1=[], a2=[];
+        const E = (e,x,y,s=50) => { ctx.save(); ctx.font=`${s}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.shadowBlur=15; ctx.shadowColor='#fff'; ctx.fillText(e,x,y); ctx.restore(); };
 
         const games = [
-            { 
-                n: "Танковая Дуэль", d: "Настоящие танки! WASD/Стрелки - поворот и езда. Space/Enter - огонь!", 
-                i:()=>{o1={x:200,y:H/2,a:0,cd:0};o2={x:W-200,y:H/2,a:Math.PI,cd:0};a1=[];a2=[];}, 
-                u:()=>{ 
-                    if(ka()) o1.a-=0.06; if(kd()) o1.a+=0.06;
-                    if(kw()){ o1.x+=Math.cos(o1.a)*6; o1.y+=Math.sin(o1.a)*6; addTrail(o1.x, o1.y, C1, 15); }
-                    if(ks()){ o1.x-=Math.cos(o1.a)*6; o1.y-=Math.sin(o1.a)*6; }
-                    
-                    if(kl()) o2.a-=0.06; if(kr()) o2.a+=0.06;
-                    if(ku()){ o2.x+=Math.cos(o2.a)*6; o2.y+=Math.sin(o2.a)*6; addTrail(o2.x, o2.y, C2, 15); }
-                    if(kdn()){ o2.x-=Math.cos(o2.a)*6; o2.y-=Math.sin(o2.a)*6; }
-
-                    cl(o1); cl(o2);
-                    if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; 
-                    
-                    if(sp()&&o1.cd===0){a1.push({x:o1.x+Math.cos(o1.a)*40,y:o1.y+Math.sin(o1.a)*40,vx:Math.cos(o1.a)*25,vy:Math.sin(o1.a)*25});o1.cd=40;doShake(8);spawnParticles(o1.x+Math.cos(o1.a)*40,o1.y+Math.sin(o1.a)*40,C1,15);} 
-                    if(en()&&o2.cd===0){a2.push({x:o2.x+Math.cos(o2.a)*40,y:o2.y+Math.sin(o2.a)*40,vx:Math.cos(o2.a)*25,vy:Math.sin(o2.a)*25});o2.cd=40;doShake(8);spawnParticles(o2.x+Math.cos(o2.a)*40,o2.y+Math.sin(o2.a)*40,C2,15);} 
-                    
-                    a1.forEach(b=>{b.x+=b.vx; b.y+=b.vy; addTrail(b.x,b.y,C1,8);}); 
-                    a2.forEach(b=>{b.x+=b.vx; b.y+=b.vy; addTrail(b.x,b.y,C2,8);}); 
-                    
-                    a1=a1.filter(b=>b.x<W&&b.x>0&&b.y>0&&b.y<H&&D(b,o2)>45?true:(winRound(1),false)); 
-                    a2=a2.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H&&D(b,o1)>45?true:(winRound(2),false)); 
-                }, 
-                r:()=>{ 
-                    drawTank(o1.x, o1.y, o1.a, C1); drawTank(o2.x, o2.y, o2.a, C2);
-                    a1.forEach(b=>circ(b.x,b.y,8,CN,20)); a2.forEach(b=>circ(b.x,b.y,8,CN,20)); 
-                    drawA(1,{x:o1.x,y:o1.y-60},30); drawA(2,{x:o2.x,y:o2.y-60},30);
-                } 
-            },
-            { 
-                n: "Звездный Флот", d: "Космические корабли! A/D и Влево/Вправо - движение вбок. Space/Enter - огонь.", 
-                i:()=>{o1={x:W/2,y:H-100,cd:0,a:-Math.PI/2};o2={x:W/2,y:100,cd:0,a:Math.PI/2};a1=[];a2=[];}, 
-                u:()=>{ 
-                    if(ka())o1.x-=12; if(kd())o1.x+=12; 
-                    if(kl())o2.x-=12; if(kr())o2.x+=12; 
-                    cl(o1); cl(o2); 
-                    if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; 
-                    if(sp()&&o1.cd===0){a1.push({x:o1.x,y:o1.y-40});o1.cd=12;spawnParticles(o1.x,o1.y,C1,5);} 
-                    if(en()&&o2.cd===0){a2.push({x:o2.x,y:o2.y+40});o2.cd=12;spawnParticles(o2.x,o2.y,C2,5);} 
-                    a1.forEach(b=>b.y-=22); a2.forEach(b=>b.y+=22); 
-                    a1=a1.filter(b=>b.y>-50&&D(b,o2)>40?true:(winRound(1),false)); 
-                    a2=a2.filter(b=>b.y<H+50&&D(b,o1)>40?true:(winRound(2),false)); 
-                }, 
-                r:()=>{ 
-                    drawShip(o1.x, o1.y, C1, o1.a); drawShip(o2.x, o2.y, C2, o2.a);
-                    a1.forEach(b=>rect(b.x-4,b.y-15,8,30,C1,15)); a2.forEach(b=>rect(b.x-4,b.y-15,8,30,C2,15)); 
-                    drawA(1,{x:o1.x,y:o1.y+60},30); drawA(2,{x:o2.x,y:o2.y-60},30);
-                } 
-            },
-            { 
-                n: "Битва Магов", d: "Кастуй заклинания! Следи за указкой.", 
-                i:()=>{o1={x:400,y:H/2};o2={x:1200,y:H/2};a1=[]; globalTm=0;}, 
-                u:()=>{ 
-                    m1(o1,11); m2(o2,11); cl(o1); cl(o2); 
-                    if(globalTm%30===0){ let h=Math.random()>.5; a1.push({h:h, p:h?rnd(H):rnd(W), t:60}); } 
-                    let d1=false,d2=false; 
-                    a1.forEach(L=>{ 
-                        L.t--; 
-                        if(L.t<0){ 
-                            if(L.t===-1){doShake(10); spawnParticles(L.h?W/2:L.p, L.h?L.p:H/2, '#eab308', 30, '⚡️');} 
-                            if(L.h){ if(Math.abs(o1.y-L.p)<35)d1=true; if(Math.abs(o2.y-L.p)<35)d2=true; }
-                            else { if(Math.abs(o1.x-L.p)<35)d1=true; if(Math.abs(o2.x-L.p)<35)d2=true; } 
-                        } 
-                    }); 
-                    a1=a1.filter(L=>L.t>-15); 
-                    if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); 
-                }, 
-                r:()=>{ 
-                    drawWizard(o1.x, o1.y, C1); drawWizard(o2.x, o2.y, C2);
-                    a1.forEach(L=>{ 
-                        let isWarn = L.t>0; let c = isWarn?'rgba(234,179,8,0.2)':'#eab308'; let w = isWarn?4:50; 
-                        if(L.h)rect(0,L.p-w/2,W,w,c,isWarn?10:40); else rect(L.p-w/2,0,w,H,c,isWarn?10:40); 
-                    }); 
-                    drawA(1,{x:o1.x,y:o1.y-60},30); drawA(2,{x:o2.x,y:o2.y-60},30);
-                } 
-            },
-            { n: "Рикошет", d: "Геометрия боя! Пули отскакивают от стен 4 раза.", i:()=>{o1={x:200,y:H/2,a:0,cd:0};o2={x:W-200,y:H/2,a:Math.PI,cd:0};a1=[];}, u:()=>{ if(ka())o1.a-=0.1; if(kd())o1.a+=0.1; if(kw()){o1.x+=Math.cos(o1.a)*10;o1.y+=Math.sin(o1.a)*10;} if(kl())o2.a-=0.1; if(kr())o2.a+=0.1; if(ku()){o2.x+=Math.cos(o2.a)*10;o2.y+=Math.sin(o2.a)*10;} cl(o1); cl(o2); if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x,y:o1.y,vx:Math.cos(o1.a)*22,vy:Math.sin(o1.a)*22, o:1, l:5});o1.cd=25;doShake(3);} if(en()&&o2.cd===0){a1.push({x:o2.x,y:o2.y,vx:Math.cos(o2.a)*22,vy:Math.sin(o2.a)*22, o:2, l:5});o2.cd=25;doShake(3);} let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>W){b.vx*=-1;b.l--; spawnParticles(b.x,b.y,b.o===1?C1:C2,8);} if(b.y<0||b.y>H){b.vy*=-1;b.l--; spawnParticles(b.x,b.y,b.o===1?C1:C2,8);} if(b.o!==1 && D(b,o1)<55)d1=true; if(b.o!==2 && D(b,o2)<55)d2=true; addTrail(b.x, b.y, b.o===1?C1:C2, 12); }); a1=a1.filter(b=>b.l>0); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ drawA(1,o1); drawA(2,o2); line(o1.x,o1.y,o1.x+Math.cos(o1.a)*80,o1.y+Math.sin(o1.a)*80,C1,8,20); line(o2.x,o2.y,o2.x+Math.cos(o2.a)*80,o2.y+Math.sin(o2.a)*80,C2,8,20); a1.forEach(b=>circ(b.x,b.y,12,b.o===1?C1:C2,25)); } },
-            { n: "Ниндзя Дэш", d: "Space/Enter для рывка! Разрежь врага.", i:()=>{o1={x:300,y:H/2,dx:0,dy:0,d:0};o2={x:W-300,y:H/2,dx:0,dy:0,d:0};}, u:()=>{ if(o1.d===0){m1(o1,8); if(kw())o1.dy=-1;else if(ks())o1.dy=1;else o1.dy=0; if(ka())o1.dx=-1;else if(kd())o1.dx=1;else o1.dx=0; if(sp()&&(o1.dx||o1.dy)){o1.d=16; doShake(10);}} else { o1.x+=o1.dx*45; o1.y+=o1.dy*45; o1.d--; addTrail(o1.x,o1.y,'#fff',40); } if(o2.d===0){m2(o2,8); if(ku())o2.dy=-1;else if(kdn())o2.dy=1;else o2.dy=0; if(kl())o2.dx=-1;else if(kr())o2.dx=1;else o2.dx=0; if(en()&&(o2.dx||o2.dy)){o2.d=16; doShake(10);}} else { o2.x+=o2.dx*45; o2.y+=o2.dy*45; o2.d--; addTrail(o2.x,o2.y,'#fff',40); } cl(o1); cl(o2); if(D(o1,o2)<70){ if(o1.d>0&&o2.d===0)winRound(1); else if(o2.d>0&&o1.d===0)winRound(2); else if(o1.d>0&&o2.d>0){o1.d=0;o2.d=0;o1.x-=o1.dx*200;o2.x-=o2.dx*200;doShake(20);spawnParticles(W/2,H/2,'#fff',60,'⚔️');} } }, r:()=>{ drawA(1,o1); drawA(2,o2); if(o1.d>0)circ(o1.x,o1.y,80,C1,40,0.6); if(o2.d>0)circ(o2.x,o2.y,80,C2,40,0.6); } },
+            // 1-10: Экшен
+            { n: "Снайперы", d: "Прыгай (W/Up) и стреляй (Space/Enter)!", i:()=>{o1={x:200,y:H-80,vy:0,cd:0};o2={x:W-200,y:H-80,vy:0,cd:0};a1=[];a2=[];}, u:()=>{ if(kw()&&o1.y>=H-80)o1.vy=-26; if(ku()&&o2.y>=H-80)o2.vy=-26; o1.vy+=1.2;o1.y=Math.min(H-80,o1.y+o1.vy); o2.vy+=1.2;o2.y=Math.min(H-80,o2.y+o2.vy); if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x,y:o1.y});o1.cd=35;doShake(3);spawnParticles(o1.x+40,o1.y,C1,5);} if(en()&&o2.cd===0){a2.push({x:o2.x,y:o2.y});o2.cd=35;doShake(3);spawnParticles(o2.x-40,o2.y,C2,5);} a1.forEach(b=>b.x+=40); a2.forEach(b=>b.x-=40); a1=a1.filter(b=>b.x<W&&D(b,o2)>60?true:(winRound(1),false)); a2=a2.filter(b=>b.x>0&&D(b,o1)>60?true:(winRound(2),false)); }, r:()=>{ line(o1.x,o1.y,W,o1.y,C1,2,10,0.4); line(o2.x,o2.y,0,o2.y,C2,2,10,0.4); drawA(1,o1); drawA(2,o2); a1.forEach(b=>E('☄️',b.x,b.y,40)); a2.forEach(b=>E('☄️',b.x,b.y,40)); line(0,H-20,W,H-20,'#444',20); } },
+            { n: "Метеориты", d: "Прячься под щитами от дождя ☄️!", i:()=>{o1={x:W/4,y:H-60};o2={x:W*.75,y:H-60};a1=[{x:400,w:220},{x:1200,w:220}]; a2=[]; globalTm=0;}, u:()=>{ m1(o1,14); m2(o2,14); cl(o1); cl(o2); o1.y=H-60; o2.y=H-60; if(globalTm%12===0)a2.push({x:rnd(W),y:-50,vy:rnd(10)+14}); let d1=false,d2=false; a2.forEach(m=>{m.y+=m.vy; if(m.y>H-70){ let s1=a1.some(s=>m.x>s.x-s.w/2&&m.x<s.x+s.w/2); if(!s1){ if(Math.abs(m.x-o1.x)<55)d1=true; if(Math.abs(m.x-o2.x)<55)d2=true; spawnParticles(m.x,H-20,'#ef4444',3,'🔥'); }else{spawnParticles(m.x,H-140,CN,2,'⚡️');} } }); if(globalTm%200===0)a1=[{x:rnd(W-300)+150,w:200+rnd(150)}]; if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ drawA(1,o1); drawA(2,o2); a1.forEach(s=>{rect(s.x-s.w/2,H-140,s.w,20,CN,30,0.9); rect(s.x-s.w/2,H-120,s.w,120,CN,0,0.15);}); a2.forEach(m=>{E('☄️',m.x,m.y,30); line(m.x,m.y,m.x,m.y-60,'#f97316',4);}); } },
+            { n: "Лазерная Сетка", d: "Следи за линиями прицеливания и уклоняйся!", i:()=>{o1={x:400,y:H/2};o2={x:1200,y:H/2};a1=[];}, u:()=>{ m1(o1,11); m2(o2,11); cl(o1); cl(o2); if(globalTm%22===0){ let h=Math.random()>.5; a1.push({h:h, p:h?rnd(H):rnd(W), t:65}); } let d1=false,d2=false; a1.forEach(L=>{ L.t--; if(L.t<0){ if(L.t===-1){doShake(5); spawnParticles(L.h?W/2:L.p, L.h?L.p:H/2, '#ef4444', 10, '⚡️');} if(L.h){ if(Math.abs(o1.y-L.p)<35)d1=true; if(Math.abs(o2.y-L.p)<35)d2=true; }else{ if(Math.abs(o1.x-L.p)<35)d1=true; if(Math.abs(o2.x-L.p)<35)d2=true; } } }); a1=a1.filter(L=>L.t>-15); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ drawA(1,o1); drawA(2,o2); a1.forEach(L=>{ let w = L.t>0; let c = w?'rgba(239,68,68,0.4)':'#ef4444'; let s = w?4:40; if(L.h)rect(0,L.p-s/2,W,s,c,w?10:40); else rect(L.p-s/2,0,s,H,c,w?10:40); }); } },
+            { n: "Рикошет", d: "Геометрия боя! Пули отскакивают от стен 4 раза.", i:()=>{o1={x:200,y:H/2,a:0,cd:0};o2={x:W-200,y:H/2,a:Math.PI,cd:0};a1=[];}, u:()=>{ if(ka())o1.a-=0.1; if(kd())o1.a+=0.1; if(kw()){o1.x+=Math.cos(o1.a)*10;o1.y+=Math.sin(o1.a)*10;} if(kl())o2.a-=0.1; if(kr())o2.a+=0.1; if(ku()){o2.x+=Math.cos(o2.a)*10;o2.y+=Math.sin(o2.a)*10;} cl(o1); cl(o2); if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x,y:o1.y,vx:Math.cos(o1.a)*22,vy:Math.sin(o1.a)*22, o:1, l:5});o1.cd=25;} if(en()&&o2.cd===0){a1.push({x:o2.x,y:o2.y,vx:Math.cos(o2.a)*22,vy:Math.sin(o2.a)*22, o:2, l:5});o2.cd=25;} let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>W){b.vx*=-1;b.l--; spawnParticles(b.x,b.y,b.o===1?C1:C2,3);} if(b.y<0||b.y>H){b.vy*=-1;b.l--; spawnParticles(b.x,b.y,b.o===1?C1:C2,3);} if(b.o!==1 && D(b,o1)<55)d1=true; if(b.o!==2 && D(b,o2)<55)d2=true; addTrail(b.x, b.y, b.o===1?C1:C2, 12); }); a1=a1.filter(b=>b.l>0); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ drawA(1,o1); drawA(2,o2); line(o1.x,o1.y,o1.x+Math.cos(o1.a)*80,o1.y+Math.sin(o1.a)*80,C1,8,20); line(o2.x,o2.y,o2.x+Math.cos(o2.a)*80,o2.y+Math.sin(o2.a)*80,C2,8,20); a1.forEach(b=>circ(b.x,b.y,12,b.o===1?C1:C2,25)); } },
+            { n: "Ниндзя Дэш", d: "Space/Enter для рывка! Разрежь врага.", i:()=>{o1={x:300,y:H/2,dx:0,dy:0,d:0};o2={x:W-300,y:H/2,dx:0,dy:0,d:0};}, u:()=>{ if(o1.d===0){m1(o1,8); if(kw())o1.dy=-1;else if(ks())o1.dy=1;else o1.dy=0; if(ka())o1.dx=-1;else if(kd())o1.dx=1;else o1.dx=0; if(sp()&&(o1.dx||o1.dy)){o1.d=16; doShake(5);}} else { o1.x+=o1.dx*45; o1.y+=o1.dy*45; o1.d--; addTrail(o1.x,o1.y,'#fff',40); } if(o2.d===0){m2(o2,8); if(ku())o2.dy=-1;else if(kdn())o2.dy=1;else o2.dy=0; if(kl())o2.dx=-1;else if(kr())o2.dx=1;else o2.dx=0; if(en()&&(o2.dx||o2.dy)){o2.d=16; doShake(5);}} else { o2.x+=o2.dx*45; o2.y+=o2.dy*45; o2.d--; addTrail(o2.x,o2.y,'#fff',40); } cl(o1); cl(o2); if(D(o1,o2)<70){ if(o1.d>0&&o2.d===0)winRound(1); else if(o2.d>0&&o1.d===0)winRound(2); else if(o1.d>0&&o2.d>0){o1.d=0;o2.d=0;o1.x-=o1.dx*200;o2.x-=o2.dx*200;doShake(10);spawnParticles(W/2,H/2,'#fff',15,'⚔️');} } }, r:()=>{ drawA(1,o1); drawA(2,o2); if(o1.d>0)circ(o1.x,o1.y,80,C1,40,0.6); if(o2.d>0)circ(o2.x,o2.y,80,C2,40,0.6); } },
             // 6-10: Космос и Аркада
-            { n: "Черная Дыра", d: "Центр засасывает! Толкай врага.", i:()=>{o1={x:300,y:H/2};o2={x:W-300,y:H/2};}, u:()=>{ m1(o1,12); m2(o2,12); cl(o1); cl(o2); let dx1=W/2-o1.x, dy1=H/2-o1.y, d1=Math.hypot(dx1,dy1); o1.x+=dx1/d1*6; o1.y+=dy1/d1*6; let dx2=W/2-o2.x, dy2=H/2-o2.y, d2=Math.hypot(dx2,dy2); o2.x+=dx2/d2*6; o2.y+=dy2/d2*6; let cd=D(o1,o2); if(cd<80){ let nx=(o2.x-o1.x)/cd, ny=(o2.y-o1.y)/cd; o1.x-=nx*30;o1.y-=ny*30; o2.x+=nx*30;o2.y+=ny*30; doShake(8); spawnParticles(o1.x+nx*40, o1.y+ny*40, '#fff', 10); } if(d1<80)winRound(2); else if(d2<80)winRound(1); }, r:()=>{ let s = 100 + Math.sin(globalTm*0.2)*15; circ(W/2,H/2,s+40,'#a855f7',70,0.5); circ(W/2,H/2,s,'#000',40); E('🌌',W/2,H/2, s); drawA(1,o1); drawA(2,o2); } },
-            { n: "Инфекция", d: "Зараженный (Красный) ОЧЕНЬ быстр! Передай заразу.", i:()=>{o1={x:400,y:H/2};o2={x:1200,y:H/2}; o3={t:900}; a1=Math.random()>.5?1:2;}, u:()=>{ m1(o1, a1===1?16:10); m2(o2, a1===2?16:10); cl(o1); cl(o2); if(D(o1,o2)<80 && o3.t<850){ a1=a1===1?2:1; o3.t+=50; spawnParticles(W/2,H/2,'#ef4444',40,'🦠'); doShake(20); o1.x=300; o2.x=W-300; o1.y=H/2; o2.y=H/2; } if(--o3.t<=0)winRound(a1===1?2:1); }, r:()=>{ if(a1===1){circ(o1.x,o1.y,110,'#ef4444',50,0.7); addTrail(o1.x,o1.y,'#ef4444',50);} if(a1===2){circ(o2.x,o2.y,110,'#ef4444',50,0.7); addTrail(o2.x,o2.y,'#ef4444',50);} drawA(1,o1); drawA(2,o2); txt(Math.ceil(o3.t/60),W/2,100,100); } },
-            { n: "Отражатели", d: "Стреляй в ⚡️сферу, чтобы шары летели во врага!", i:()=>{o1={x:150,y:H/2,cd:0};o2={x:W-150,y:H/2,cd:0};a1=[];}, u:()=>{ if(kw())o1.y-=12; if(ks())o1.y+=12; if(ku())o2.y-=12; if(kdn())o2.y+=12; cl(o1); cl(o2); if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x+60,y:o1.y,vx:22,vy:0});o1.cd=12;} if(en()&&o2.cd===0){a1.push({x:o2.x-60,y:o2.y,vx:-22,vy:0});o2.cd=12;} let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(D(b,{x:W/2,y:H/2})<100){ b.vx=(b.x-W/2)*0.4; b.vy=(b.y-H/2)*0.4; spawnParticles(W/2,H/2,CN,8); doShake(5); } if(b.vx<0 && D(b,o1)<50)d1=true; if(b.vx>0 && D(b,o2)<50)d2=true; addTrail(b.x, b.y, '#fff', 15); }); a1=a1.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ let r=90+Math.sin(globalTm*0.4)*15; circ(W/2,H/2,r,CN,50,0.8); circ(W/2,H/2,r-25,'#fff',30); E('⚡️',W/2,H/2,60); drawA(1,o1); drawA(2,o2); a1.forEach(b=>circ(b.x,b.y,15,'#fff')); } },
-            { n: "Пакман-Дуэль", d: "Экран без границ! Догони врага 👻.", i:()=>{o1={x:300,y:H/2};o2={x:W-300,y:H/2};o3={t:0};a1=Math.random()>.5?1:2;}, u:()=>{ m1(o1, a1===1?16:12); m2(o2, a1===2?16:12); [o1,o2].forEach(o=>{if(o.x<0)o.x=W;if(o.x>W)o.x=0;if(o.y<0)o.y=H;if(o.y>H)o.y=0;}); if(D(o1,o2)<80)winRound(a1); if(++o3.t%250===0){a1=a1===1?2:1;spawnParticles(W/2,H/2,CN,50,'👻');doShake(15);} }, r:()=>{ if(a1===1){circ(o1.x,o1.y,120,CN,40,0.6); E('😈',o1.x,o1.y-100,60);} else {circ(o2.x,o2.y,120,CN,40,0.6); E('😈',o2.x,o2.y-100,60);} drawA(1,o1); drawA(2,o2); txt(a1===1?"P1 ОХОТНИК":"P2 ОХОТНИК",W/2,80,60); } },
+            { n: "Черная Дыра", d: "Центр засасывает! Толкай врага.", i:()=>{o1={x:300,y:H/2};o2={x:W-300,y:H/2};}, u:()=>{ m1(o1,12); m2(o2,12); cl(o1); cl(o2); let dx1=W/2-o1.x, dy1=H/2-o1.y, d1=Math.hypot(dx1,dy1); o1.x+=dx1/d1*6; o1.y+=dy1/d1*6; let dx2=W/2-o2.x, dy2=H/2-o2.y, d2=Math.hypot(dx2,dy2); o2.x+=dx2/d2*6; o2.y+=dy2/d2*6; let cd=D(o1,o2); if(cd<80){ let nx=(o2.x-o1.x)/cd, ny=(o2.y-o1.y)/cd; o1.x-=nx*30;o1.y-=ny*30; o2.x+=nx*30;o2.y+=ny*30; doShake(5); spawnParticles(o1.x+nx*40, o1.y+ny*40, '#fff', 5); } if(d1<80)winRound(2); else if(d2<80)winRound(1); }, r:()=>{ let s = 100 + Math.sin(globalTm*0.2)*15; circ(W/2,H/2,s+40,'#a855f7',70,0.5); circ(W/2,H/2,s,'#000',40); E('🌌',W/2,H/2, s); drawA(1,o1); drawA(2,o2); } },
+            { n: "Инфекция", d: "Зараженный (Красный) ОЧЕНЬ быстр! Передай заразу.", i:()=>{o1={x:400,y:H/2};o2={x:1200,y:H/2}; o3={t:900}; a1=Math.random()>.5?1:2;}, u:()=>{ m1(o1, a1===1?16:10); m2(o2, a1===2?16:10); cl(o1); cl(o2); if(D(o1,o2)<80 && o3.t<850){ a1=a1===1?2:1; o3.t+=50; spawnParticles(W/2,H/2,'#ef4444',15,'🦠'); doShake(10); o1.x=300; o2.x=W-300; o1.y=H/2; o2.y=H/2; } if(--o3.t<=0)winRound(a1===1?2:1); }, r:()=>{ if(a1===1){circ(o1.x,o1.y,110,'#ef4444',50,0.7); addTrail(o1.x,o1.y,'#ef4444',50);} if(a1===2){circ(o2.x,o2.y,110,'#ef4444',50,0.7); addTrail(o2.x,o2.y,'#ef4444',50);} drawA(1,o1); drawA(2,o2); txt(Math.ceil(o3.t/60),W/2,100,100); } },
+            { n: "Отражатели", d: "Стреляй в ⚡️сферу, чтобы шары летели во врага!", i:()=>{o1={x:150,y:H/2,cd:0};o2={x:W-150,y:H/2,cd:0};a1=[];}, u:()=>{ if(kw())o1.y-=12; if(ks())o1.y+=12; if(ku())o2.y-=12; if(kdn())o2.y+=12; cl(o1); cl(o2); if(o1.cd>0)o1.cd--; if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x+60,y:o1.y,vx:22,vy:0});o1.cd=12;} if(en()&&o2.cd===0){a1.push({x:o2.x-60,y:o2.y,vx:-22,vy:0});o2.cd=12;} let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(D(b,{x:W/2,y:H/2})<100){ b.vx=(b.x-W/2)*0.4; b.vy=(b.y-H/2)*0.4; spawnParticles(W/2,H/2,CN,3); doShake(3); } if(b.vx<0 && D(b,o1)<50)d1=true; if(b.vx>0 && D(b,o2)<50)d2=true; addTrail(b.x, b.y, '#fff', 15); }); a1=a1.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ let r=90+Math.sin(globalTm*0.4)*15; circ(W/2,H/2,r,CN,50,0.8); circ(W/2,H/2,r-25,'#fff',30); E('⚡️',W/2,H/2,60); drawA(1,o1); drawA(2,o2); a1.forEach(b=>circ(b.x,b.y,15,'#fff')); } },
+            { n: "Пакман-Дуэль", d: "Экран без границ! Догони врага 👻.", i:()=>{o1={x:300,y:H/2};o2={x:W-300,y:H/2};o3={t:0};a1=Math.random()>.5?1:2;}, u:()=>{ m1(o1, a1===1?16:12); m2(o2, a1===2?16:12); [o1,o2].forEach(o=>{if(o.x<0)o.x=W;if(o.x>W)o.x=0;if(o.y<0)o.y=H;if(o.y>H)o.y=0;}); if(D(o1,o2)<80)winRound(a1); if(++o3.t%250===0){a1=a1===1?2:1;spawnParticles(W/2,H/2,CN,15,'👻');doShake(5);} }, r:()=>{ if(a1===1){circ(o1.x,o1.y,120,CN,40,0.6); E('😈',o1.x,o1.y-100,60);} else {circ(o2.x,o2.y,120,CN,40,0.6); E('😈',o2.x,o2.y-100,60);} drawA(1,o1); drawA(2,o2); txt(a1===1?"P1 ОХОТНИК":"P2 ОХОТНИК",W/2,80,60); } },
             { n: "Огненное Кольцо", d: "Не касайся сужающегося пламени 🔥!", i:()=>{o1={x:W/4,y:H/2};o2={x:W*.75,y:H/2};o3={t:800};}, u:()=>{ m1(o1,14); m2(o2,14); cl(o1); cl(o2); o3.t-=0.8; let d1=D(o1,{x:W/2,y:H/2})>o3.t-50, d2=D(o2,{x:W/2,y:H/2})>o3.t-50; if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ circ(W/2,H/2,Math.max(1,o3.t),'transparent',0); ctx.lineWidth=30;ctx.strokeStyle='#ef4444';ctx.shadowBlur=60;ctx.shadowColor='#ef4444';ctx.stroke(); E('🔥',W/2,H/2-o3.t, 60); E('🔥',W/2,H/2+o3.t, 60); drawA(1,o1); drawA(2,o2); } },
             // 11-20: Спорт и Машины
-            { n: "Понг Турбо", d: "Два мяча ⚽️⚽️, бешеные скорости. (W/S, Up/Dn)", i:()=>{o1={y:H/2};o2={y:H/2};a1=[{x:W/2,y:H/2-150,vx:15,vy:12},{x:W/2,y:H/2+150,vx:-15,vy:-12}];}, u:()=>{ if(kw())o1.y-=22; if(ks())o1.y+=22; if(ku())o2.y-=22; if(kdn())o2.y+=22; cl(o1,150); cl(o2,150); let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.y<25||b.y>H-25)b.vy*=-1; if(b.x<120 && Math.abs(b.y-o1.y)<130){b.vx=Math.abs(b.vx)+2; b.x=120; spawnParticles(b.x,b.y,C1,15); doShake(8);} if(b.x>W-120 && Math.abs(b.y-o2.y)<130){b.vx=-Math.abs(b.vx)-2; b.x=W-120; spawnParticles(b.x,b.y,C2,15); doShake(8);} if(b.x<0)d1=true; if(b.x>W)d2=true; addTrail(b.x,b.y,'#fff',20); }); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ rect(80,o1.y-100,30,200,C1,40); rect(W-110,o2.y-100,30,200,C2,40); a1.forEach(b=>{circ(b.x,b.y,25,'#fff',40); E('⚽️',b.x,b.y,50);}); } },
-            { n: "Сумо: Лед", d: "Очень скользко 🧊! Вытолкни врага.", i:()=>{o1={x:450,y:H/2,vx:0,vy:0};o2={x:1150,y:H/2,vx:0,vy:0};}, u:()=>{ if(kw())o1.vy-=0.6; if(ks())o1.vy+=0.6; if(ka())o1.vx-=0.6; if(kd())o1.vx+=0.6; if(ku())o2.vy-=0.6; if(kdn())o2.vy+=0.6; if(kl())o2.vx-=0.6; if(kr())o2.vx+=0.6; o1.x+=o1.vx; o1.y+=o1.vy; o2.x+=o2.vx; o2.y+=o2.vy; addTrail(o1.x,o1.y,C1,30); addTrail(o2.x,o2.y,C2,30); let d=D(o1,o2); if(d<130){ let nx=(o2.x-o1.x)/d, ny=(o2.y-o1.y)/d, p=2*(o1.vx*nx+o1.vy*ny-o2.vx*nx-o2.vy*ny)/2; o1.vx-=p*nx;o1.vy-=p*ny; o2.vx+=p*nx;o2.vy+=p*ny; spawnParticles(o1.x+nx*65,o1.y+ny*65,'#fff',20,'🧊'); doShake(15); } if(D(o1,{x:W/2,y:H/2})>400)winRound(2); else if(D(o2,{x:W/2,y:H/2})>400)winRound(1); }, r:()=>{ circ(W/2,H/2,400,'#0ea5e9',30,0.2); ctx.strokeStyle='#bae6fd';ctx.lineWidth=8;ctx.stroke(); E('🧊',W/2,H/2,100); drawA(1,o1,120); drawA(2,o2,120); } },
-            { n: "Футбол: Хаос", d: "3 Мяча ⚽️⚽️⚽️! Забей любой в ворота врага.", i:()=>{o1={x:250,y:H/2};o2={x:1350,y:H/2};a1=[{x:W/2,y:300,vx:0,vy:0},{x:W/2,y:600,vx:0,vy:0},{x:W/2,y:450,vx:0,vy:0}];}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; b.vx*=0.97; b.vy*=0.97; if(b.y<30||b.y>H-30)b.vy*=-1; if(b.x<30&&(b.y<H/2-250||b.y>H/2+250))b.vx*=-1; if(b.x>W-30&&(b.y<H/2-250||b.y>H/2+250))b.vx*=-1; [o1,o2].forEach(p=>{if(D(b,p)<80){b.vx=(b.x-p.x)*0.45;b.vy=(b.y-p.y)*0.45;spawnParticles(b.x,b.y,'#fff',8);doShake(4);}}); if(b.x<0)d1=true; if(b.x>W)d2=true; }); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ rect(0,H/2-250,40,500,C1,40,0.85); rect(W-40,H/2-250,40,500,C2,40,0.85); line(W/2,0,W/2,H,'#333',6); circ(W/2,H/2,180,'#333',0); drawA(1,o1,100); drawA(2,o2,100); a1.forEach(b=>E('⚽️',b.x,b.y,60)); } },
-            { n: "Канат", d: "Кликай W или Up чтобы утащить врага в пропасть!", i:()=>{o1={p:50};}, u:()=>{ if(kw()){o1.p-=1.4; keys['KeyW']=false; spawnParticles(W/2-400,H/2,C1,8);doShake(3);} if(ku()){o1.p+=1.4; keys['ArrowUp']=false; spawnParticles(W/2+400,H/2,C2,8);doShake(3);} if(o1.p<=0)winRound(1); else if(o1.p>=100)winRound(2); }, r:()=>{ rect(150,H/2-60,1300,120,'#222',20); rect(150,H/2-60,o1.p*13,120,C1,40); rect(150+o1.p*13,H/2-60,1300-o1.p*13,120,C2,40); line(W/2,H/2-100,W/2,H/2+100,'#ef4444',20,50); drawA(1,{x:150+o1.p*13-130,y:H/2},140); drawA(2,{x:150+o1.p*13+130,y:H/2},140); } },
-            { n: "Аэрохоккей", d: "Скорость шайбы 🏒 растет! Забей гол!", i:()=>{o1={x:300,y:H/2,vx:0,vy:0};o2={x:1300,y:H/2,vx:0,vy:0};o3={x:W/2,y:H/2,vx:14,vy:14};}, u:()=>{ let ax1=0,ay1=0,ax2=0,ay2=0; if(kw())ay1=-3;if(ks())ay1=3;if(ka())ax1=-3;if(kd())ax1=3; if(ku())ay2=-3;if(kdn())ay2=3;if(kl())ax2=-3;if(kr())ax2=3; o1.vx=(o1.vx+ax1)*0.85;o1.vy=(o1.vy+ay1)*0.85; o2.vx=(o2.vx+ax2)*0.85;o2.vy=(o2.vy+ay2)*0.85; o1.x=Math.max(70,Math.min(W/2-70,o1.x+o1.vx)); o1.y=Math.max(70,Math.min(H-70,o1.y+o1.vy)); o2.x=Math.max(W/2+70,Math.min(W-70,o2.x+o2.vx)); o2.y=Math.max(70,Math.min(H-70,o2.y+o2.vy)); let p=o3; p.x+=p.vx;p.y+=p.vy; addTrail(p.x,p.y,CN,30); if(p.y<30||p.y>H-30)p.vy*=-1; if((p.x<30&&(p.y<H/2-200||p.y>H/2+200))||(p.x>W-30&&(p.y<H/2-200||p.y>H/2+200)))p.vx*=-1; [o1,o2].forEach(m=>{let dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy);if(d<100){p.vx+=dx/d*7;p.vy+=dy/d*7;spawnParticles(p.x,p.y,'#fff',15);doShake(10);}}); let speed = Math.hypot(p.vx,p.vy); if(speed>40){p.vx=p.vx/speed*40;p.vy=p.vy/speed*40;} if(p.x<0)winRound(2);else if(p.x>W)winRound(1); }, r:()=>{ line(W/2,0,W/2,H,'#333',8); circ(W/2,H/2,250,'#333',0); rect(0,H/2-200,25,400,C1,40); rect(W-25,H/2-200,25,400,C2,40); E('🏒',o3.x,o3.y,60); drawA(1,o1,110); drawA(2,o2,110); } },
-            { n: "Ловцы Падающих Звезд", d: "Лови ⭐, уворачивайся от 💥!", i:()=>{o1={x:400,y:H-100,s:0};o2={x:1200,y:H-100,s:0};a1=[];tm=900;}, u:()=>{ if(ka())o1.x-=20; if(kd())o1.x+=20; if(kl())o2.x-=20; if(kr())o2.x+=20; cl(o1); cl(o2); if(Math.random()<0.25)a1.push({x:rnd(W),y:-20,b:Math.random()>.65}); a1=a1.filter(s=>{ s.y+=12; if(s.y>H-150 && Math.abs(s.x-o1.x)<80){ if(s.b){o1.s-=5;doShake(15);}else o1.s++; spawnParticles(s.x,s.y,s.b?'#ef4444':CN,20,s.b?'💥':'⭐'); return false; } if(s.y>H-150 && Math.abs(s.x-o2.x)<80){ if(s.b){o2.s-=5;doShake(15);}else o2.s++; spawnParticles(s.x,s.y,s.b?'#ef4444':CN,20,s.b?'💥':'⭐'); return false; } return s.y<H; }); if(--tm<=0){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(s=>E(s.b?'💥':'⭐',s.x,s.y,50)); drawA(1,o1,120); drawA(2,o2,120); txt(Math.ceil(tm/60),W/2,100,80); ctx.fillStyle=C1;txt(o1.s,150,100,80); ctx.fillStyle=C2;txt(o2.s,W-150,100,80); } },
+            { n: "Понг Турбо", d: "Два мяча ⚽️⚽️, бешеные скорости.", i:()=>{o1={y:H/2};o2={y:H/2};a1=[{x:W/2,y:H/2-150,vx:15,vy:12},{x:W/2,y:H/2+150,vx:-15,vy:-12}];}, u:()=>{ if(kw())o1.y-=22; if(ks())o1.y+=22; if(ku())o2.y-=22; if(kdn())o2.y+=22; cl(o1,150); cl(o2,150); let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.y<25||b.y>H-25)b.vy*=-1; if(b.x<120 && Math.abs(b.y-o1.y)<130){b.vx=Math.abs(b.vx)+2; b.x=120; spawnParticles(b.x,b.y,C1,5); doShake(3);} if(b.x>W-120 && Math.abs(b.y-o2.y)<130){b.vx=-Math.abs(b.vx)-2; b.x=W-120; spawnParticles(b.x,b.y,C2,5); doShake(3);} if(b.x<0)d1=true; if(b.x>W)d2=true; addTrail(b.x,b.y,'#fff',20); }); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ rect(80,o1.y-100,30,200,C1,40); rect(W-110,o2.y-100,30,200,C2,40); a1.forEach(b=>{circ(b.x,b.y,25,'#fff',40); E('⚽️',b.x,b.y,50);}); } },
+            { n: "Сумо: Лед", d: "Очень скользко 🧊! Вытолкни врага.", i:()=>{o1={x:450,y:H/2,vx:0,vy:0};o2={x:1150,y:H/2,vx:0,vy:0};}, u:()=>{ if(kw())o1.vy-=0.6; if(ks())o1.vy+=0.6; if(ka())o1.vx-=0.6; if(kd())o1.vx+=0.6; if(ku())o2.vy-=0.6; if(kdn())o2.vy+=0.6; if(kl())o2.vx-=0.6; if(kr())o2.vx+=0.6; o1.x+=o1.vx; o1.y+=o1.vy; o2.x+=o2.vx; o2.y+=o2.vy; addTrail(o1.x,o1.y,C1,30); addTrail(o2.x,o2.y,C2,30); let d=D(o1,o2); if(d<130){ let nx=(o2.x-o1.x)/d, ny=(o2.y-o1.y)/d, p=2*(o1.vx*nx+o1.vy*ny-o2.vx*nx-o2.vy*ny)/2; o1.vx-=p*nx;o1.vy-=p*ny; o2.vx+=p*nx;o2.vy+=p*ny; spawnParticles(o1.x+nx*65,o1.y+ny*65,'#fff',5,'🧊'); doShake(5); } if(D(o1,{x:W/2,y:H/2})>400)winRound(2); else if(D(o2,{x:W/2,y:H/2})>400)winRound(1); }, r:()=>{ circ(W/2,H/2,400,'#0ea5e9',30,0.2); ctx.strokeStyle='#bae6fd';ctx.lineWidth=8;ctx.stroke(); E('🧊',W/2,H/2,100); drawA(1,o1,120); drawA(2,o2,120); } },
+            { n: "Футбол: Хаос", d: "3 Мяча ⚽️⚽️⚽️! Забей любой в ворота врага.", i:()=>{o1={x:250,y:H/2};o2={x:1350,y:H/2};a1=[{x:W/2,y:300,vx:0,vy:0},{x:W/2,y:600,vx:0,vy:0},{x:W/2,y:450,vx:0,vy:0}];}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; b.vx*=0.97; b.vy*=0.97; if(b.y<30||b.y>H-30)b.vy*=-1; if(b.x<30&&(b.y<H/2-250||b.y>H/2+250))b.vx*=-1; if(b.x>W-30&&(b.y<H/2-250||b.y>H/2+250))b.vx*=-1; [o1,o2].forEach(p=>{if(D(b,p)<80){b.vx=(b.x-p.x)*0.45;b.vy=(b.y-p.y)*0.45;spawnParticles(b.x,b.y,'#fff',3);doShake(2);}}); if(b.x<0)d1=true; if(b.x>W)d2=true; }); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ rect(0,H/2-250,40,500,C1,40,0.85); rect(W-40,H/2-250,40,500,C2,40,0.85); line(W/2,0,W/2,H,'#333',6); circ(W/2,H/2,180,'#333',0); drawA(1,o1,100); drawA(2,o2,100); a1.forEach(b=>E('⚽️',b.x,b.y,60)); } },
+            { n: "Канат", d: "Кликай W или Up чтобы утащить врага в пропасть!", i:()=>{o1={p:50};}, u:()=>{ if(kw()){o1.p-=1.4; keys['KeyW']=false; spawnParticles(W/2-400,H/2,C1,3);doShake(2);} if(ku()){o1.p+=1.4; keys['ArrowUp']=false; spawnParticles(W/2+400,H/2,C2,3);doShake(2);} if(o1.p<=0)winRound(1); else if(o1.p>=100)winRound(2); }, r:()=>{ rect(150,H/2-60,1300,120,'#222',20); rect(150,H/2-60,o1.p*13,120,C1,40); rect(150+o1.p*13,H/2-60,1300-o1.p*13,120,C2,40); line(W/2,H/2-100,W/2,H/2+100,'#ef4444',20,50); drawA(1,{x:150+o1.p*13-130,y:H/2},140); drawA(2,{x:150+o1.p*13+130,y:H/2},140); } },
+            { n: "Аэрохоккей", d: "Скорость шайбы 🏒 растет! Забей гол!", i:()=>{o1={x:300,y:H/2,vx:0,vy:0};o2={x:1300,y:H/2,vx:0,vy:0};o3={x:W/2,y:H/2,vx:14,vy:14};}, u:()=>{ let ax1=0,ay1=0,ax2=0,ay2=0; if(kw())ay1=-3;if(ks())ay1=3;if(ka())ax1=-3;if(kd())ax1=3; if(ku())ay2=-3;if(kdn())ay2=3;if(kl())ax2=-3;if(kr())ax2=3; o1.vx=(o1.vx+ax1)*0.85;o1.vy=(o1.vy+ay1)*0.85; o2.vx=(o2.vx+ax2)*0.85;o2.vy=(o2.vy+ay2)*0.85; o1.x=Math.max(70,Math.min(W/2-70,o1.x+o1.vx)); o1.y=Math.max(70,Math.min(H-70,o1.y+o1.vy)); o2.x=Math.max(W/2+70,Math.min(W-70,o2.x+o2.vx)); o2.y=Math.max(70,Math.min(H-70,o2.y+o2.vy)); let p=o3; p.x+=p.vx;p.y+=p.vy; addTrail(p.x,p.y,CN,30); if(p.y<30||p.y>H-30)p.vy*=-1; if((p.x<30&&(p.y<H/2-200||p.y>H/2+200))||(p.x>W-30&&(p.y<H/2-200||p.y>H/2+200)))p.vx*=-1; [o1,o2].forEach(m=>{let dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy);if(d<100){p.vx+=dx/d*7;p.vy+=dy/d*7;spawnParticles(p.x,p.y,'#fff',5);doShake(3);}}); let speed = Math.hypot(p.vx,p.vy); if(speed>40){p.vx=p.vx/speed*40;p.vy=p.vy/speed*40;} if(p.x<0)winRound(2);else if(p.x>W)winRound(1); }, r:()=>{ line(W/2,0,W/2,H,'#333',8); circ(W/2,H/2,250,'#333',0); rect(0,H/2-200,25,400,C1,40); rect(W-25,H/2-200,25,400,C2,40); E('🏒',o3.x,o3.y,60); drawA(1,o1,110); drawA(2,o2,110); } },
+            { n: "Ловцы Падающих Звезд", d: "Лови ⭐, уворачивайся от 💥!", i:()=>{o1={x:400,y:H-100,s:0};o2={x:1200,y:H-100,s:0};a1=[];tm=900;}, u:()=>{ if(ka())o1.x-=20; if(kd())o1.x+=20; if(kl())o2.x-=20; if(kr())o2.x+=20; cl(o1); cl(o2); if(Math.random()<0.25)a1.push({x:rnd(W),y:-20,b:Math.random()>.65}); a1=a1.filter(s=>{ s.y+=12; if(s.y>H-150 && Math.abs(s.x-o1.x)<80){ if(s.b){o1.s-=5;doShake(5);}else o1.s++; spawnParticles(s.x,s.y,s.b?'#ef4444':CN,5,s.b?'💥':'⭐'); return false; } if(s.y>H-150 && Math.abs(s.x-o2.x)<80){ if(s.b){o2.s-=5;doShake(5);}else o2.s++; spawnParticles(s.x,s.y,s.b?'#ef4444':CN,5,s.b?'💥':'⭐'); return false; } return s.y<H; }); if(--tm<=0){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(s=>E(s.b?'💥':'⭐',s.x,s.y,50)); drawA(1,o1,120); drawA(2,o2,120); txt(Math.ceil(tm/60),W/2,100,80); ctx.fillStyle=C1;txt(o1.s,150,100,80); ctx.fillStyle=C2;txt(o2.s,W-150,100,80); } },
             { n: "Сапер: Выживание", d: "Красные блоки 🧨 взрываются. Беги вправо!", i:()=>{o1={x:150,y:H/3};o2={x:150,y:H*0.66};a1=[];for(let i=0;i<150;i++)a1.push({x:400+i*150,y:rnd(H-100)+50,d:Math.random()<.48});}, u:()=>{ m1(o1,13); m2(o2,13); cl(o1); cl(o2); a1.forEach(b=>b.x-=6); let d1=false,d2=false; a1.forEach(b=>{if(b.d&&Math.abs(o1.x-b.x)<75&&Math.abs(o1.y-b.y)<75)d1=true;if(b.d&&Math.abs(o2.x-b.x)<75&&Math.abs(o2.y-b.y)<75)d2=true;}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); if(o1.x>W-100)winRound(1);else if(o2.x>W-100)winRound(2); }, r:()=>{ a1.forEach(b=>{rect(b.x-70,b.y-70,140,140,b.d?'#ef4444':'#22c55e',25,0.85); if(b.d)E('🧨',b.x,b.y,60);}); drawA(1,o1,90); drawA(2,o2,90); } },
-            { n: "Прыжки по Платформам", d: "Прыгай (W/Up) по платформам вверх ☁️!", i:()=>{o1={x:400,y:H-100,vy:0};o2={x:1200,y:H-100,vy:0};a1=[{x:0,y:H-20,w:W}];tm=0;}, u:()=>{ if(ka())o1.x-=12; if(kd())o1.x+=12; if(kl())o2.x-=12; if(kr())o2.x+=12; o1.vy+=1; o2.vy+=1; o1.y+=o1.vy; o2.y+=o2.vy; a1.forEach(p=>{ if(o1.vy>0 && o1.x>p.x && o1.x<p.x+p.w && Math.abs(o1.y-(p.y-60))<25){o1.y=p.y-60; o1.vy=kw()?-26:0; if(kw())doShake(4);} if(o2.vy>0 && o2.x>p.x && o2.x<p.x+p.w && Math.abs(o2.y-(p.y-60))<25){o2.y=p.y-60; o2.vy=ku()?-26:0; if(ku())doShake(4);} p.y+=4; }); if(++tm%30===0)a1.push({x:rnd(W-300),y:-20,w:rnd(250)+150}); a1=a1.filter(p=>p.y<H+50); let d1=o1.y>H, d2=o2.y>H; if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ a1.forEach(p=>{rect(p.x,p.y,p.w,30,CN,25); E('☁️',p.x+p.w/2,p.y+15,40);}); drawA(1,o1,90); drawA(2,o2,90); } },
-            { n: "Кликер-Пушка", d: "Кликай Space/Enter чтобы сдуть 💨 врага за экран!", i:()=>{o1={x:W/2-150};o2={x:W/2+150};}, u:()=>{ if(sp()){o1.x+=28;o2.x+=28;keys['Space']=false;spawnParticles(o1.x,H/2,C1,8,'💨');doShake(5);} if(en()){o1.x-=28;o2.x-=28;keys['Enter']=false;spawnParticles(o2.x,H/2,C2,8,'💨');doShake(5);} if(o2.x>W)winRound(1); else if(o1.x<0)winRound(2); }, r:()=>{ drawA(1,{x:o1.x,y:H/2},200); drawA(2,{x:o2.x,y:H/2},200); line(o1.x,H/2,o2.x,H/2,'#fff',40,50); } },
-            { n: "Башня Защиты", d: "Отражай снаряды 🛡️ (Space/Enter). Ошибка = смерть!", i:()=>{o1={y:H/2};o2={y:H/2};a1=[];tm=0;}, u:()=>{ if(kw())o1.y-=18; if(ks())o1.y+=18; if(ku())o2.y-=18; if(kdn())o2.y+=18; cl(o1); cl(o2); if(++tm%12===0)a1.push({x:W/2,y:rnd(H),vx:(Math.random()>.5?1:-1)*(rnd(8)+9),vy:rnd(8)-4}); let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.vx<0 && sp() && b.x<300 && Math.abs(b.y-o1.y)<120){b.vx*=-2; spawnParticles(b.x,b.y,C1,20,'🛡️');doShake(8);} if(b.vx>0 && en() && b.x>W-300 && Math.abs(b.y-o2.y)<120){b.vx*=-2; spawnParticles(b.x,b.y,C2,20,'🛡️');doShake(8);} if(b.x<0)d1=true; if(b.x>W)d2=true; }); a1=a1.filter(b=>b.x>-50&&b.x<W+50); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ rect(120,o1.y-100,35,200,keys['Space']?'#fff':C1,40); rect(W-155,o2.y-100,35,200,keys['Enter']?'#fff':C2,40); drawA(1,{x:135,y:o1.y}); drawA(2,{x:W-135,y:o2.y}); a1.forEach(b=>circ(b.x,b.y,15,CN,25)); } },
+            { n: "Прыжки по Платформам", d: "Прыгай (W/Up) по платформам вверх ☁️!", i:()=>{o1={x:400,y:H-100,vy:0};o2={x:1200,y:H-100,vy:0};a1=[{x:0,y:H-20,w:W}];tm=0;}, u:()=>{ if(ka())o1.x-=12; if(kd())o1.x+=12; if(kl())o2.x-=12; if(kr())o2.x+=12; o1.vy+=1; o2.vy+=1; o1.y+=o1.vy; o2.y+=o2.vy; a1.forEach(p=>{ if(o1.vy>0 && o1.x>p.x && o1.x<p.x+p.w && Math.abs(o1.y-(p.y-60))<25){o1.y=p.y-60; o1.vy=kw()?-26:0; if(kw())doShake(2);} if(o2.vy>0 && o2.x>p.x && o2.x<p.x+p.w && Math.abs(o2.y-(p.y-60))<25){o2.y=p.y-60; o2.vy=ku()?-26:0; if(ku())doShake(2);} p.y+=4; }); if(++tm%30===0)a1.push({x:rnd(W-300),y:-20,w:rnd(250)+150}); a1=a1.filter(p=>p.y<H+50); let d1=o1.y>H, d2=o2.y>H; if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ a1.forEach(p=>{rect(p.x,p.y,p.w,30,CN,25); E('☁️',p.x+p.w/2,p.y+15,40);}); drawA(1,o1,90); drawA(2,o2,90); } },
+            { n: "Кликер-Пушка", d: "Кликай Space/Enter чтобы сдуть 💨 врага за экран!", i:()=>{o1={x:W/2-150};o2={x:W/2+150};}, u:()=>{ if(sp()){o1.x+=28;o2.x+=28;keys['Space']=false;spawnParticles(o1.x,H/2,C1,3,'💨');doShake(2);} if(en()){o1.x-=28;o2.x-=28;keys['Enter']=false;spawnParticles(o2.x,H/2,C2,3,'💨');doShake(2);} if(o2.x>W)winRound(1); else if(o1.x<0)winRound(2); }, r:()=>{ drawA(1,{x:o1.x,y:H/2},200); drawA(2,{x:o2.x,y:H/2},200); line(o1.x,H/2,o2.x,H/2,'#fff',40,50); } },
+            { n: "Башня Защиты", d: "Отражай снаряды 🛡️ (Space/Enter). Ошибка = смерть!", i:()=>{o1={y:H/2};o2={y:H/2};a1=[];tm=0;}, u:()=>{ if(kw())o1.y-=18; if(ks())o1.y+=18; if(ku())o2.y-=18; if(kdn())o2.y+=18; cl(o1); cl(o2); if(++tm%12===0)a1.push({x:W/2,y:rnd(H),vx:(Math.random()>.5?1:-1)*(rnd(8)+9),vy:rnd(8)-4}); let d1=false,d2=false; a1.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.vx<0 && sp() && b.x<300 && Math.abs(b.y-o1.y)<120){b.vx*=-2; spawnParticles(b.x,b.y,C1,5,'🛡️');doShake(3);} if(b.vx>0 && en() && b.x>W-300 && Math.abs(b.y-o2.y)<120){b.vx*=-2; spawnParticles(b.x,b.y,C2,5,'🛡️');doShake(3);} if(b.x<0)d1=true; if(b.x>W)d2=true; }); a1=a1.filter(b=>b.x>-50&&b.x<W+50); if(d1&&d2)winRound(0); else if(d1)winRound(2); else if(d2)winRound(1); }, r:()=>{ rect(120,o1.y-100,35,200,keys['Space']?'#fff':C1,40); rect(W-155,o2.y-100,35,200,keys['Enter']?'#fff':C2,40); drawA(1,{x:135,y:o1.y}); drawA(2,{x:W-135,y:o2.y}); a1.forEach(b=>circ(b.x,b.y,15,CN,25)); } },
             // 21-30: Реакция и Логика
-            { n: "Саймон Говорит", d: "Повторяй за экраном 🧠 (WASD / Стрелки).", i:()=>{a1=[];for(let i=0;i<5;i++)a1.push(Math.floor(rnd(4))); tm=0; o1={i:0,f:false}; o2={i:0,f:false};}, u:()=>{ if(++tm>200){ let k1=-1,k2=-1; if(kw()){k1=0;keys['KeyW']=false;}if(ks()){k1=1;keys['KeyS']=false;}if(ka()){k1=2;keys['KeyA']=false;}if(kd()){k1=3;keys['KeyD']=false;} if(ku()){k2=0;keys['ArrowUp']=false;}if(kdn()){k2=1;keys['ArrowDown']=false;}if(kl()){k2=2;keys['ArrowLeft']=false;}if(kr()){k2=3;keys['ArrowRight']=false;} if(k1!==-1){if(k1===a1[o1.i]){o1.i++;spawnParticles(350,450,C1,15,'✨');doShake(6);}else o1.f=true;} if(k2!==-1){if(k2===a1[o2.i]){o2.i++;spawnParticles(1250,450,C2,15,'✨');doShake(6);}else o2.f=true;} if(o1.f&&o2.f)winRound(0);else if(o1.f||o2.i===5)winRound(2);else if(o2.f||o1.i===5)winRound(1); } }, r:()=>{ let c=['#22c55e','#ef4444','#eab308','#3b82f6']; if(tm<200){let s=Math.floor(tm/40);if(s<5)circ(W/2,H/2,200,c[a1[s]],100);} else{ txt(`${o1.i}/5`,200,120,70); txt(`${o2.i}/5`,W-200,120,70); circ(350,280,70,c[0],50);circ(350,620,70,c[1],50);circ(180,450,70,c[2],50);circ(520,450,70,c[3],50); circ(1250,280,70,c[0],50);circ(1250,620,70,c[1],50);circ(1080,450,70,c[2],50);circ(1420,450,70,c[3],50); } } },
-            { n: "Цветовая Реакция", d: "Жми W / Up ТОЛЬКО когда экран ЗЕЛЕНЫЙ 🟩!", i:()=>{tm=rnd(200)+150;o1={s:'R'};}, u:()=>{ if(o1.s==='R'){if(--tm<=0){o1.s='G';doShake(15);} if(kw()){keys['KeyW']=false;winRound(2);} if(ku()){keys['ArrowUp']=false;winRound(1);}}else{if(kw())winRound(1);if(ku())winRound(2);} }, r:()=>{ ctx.fillStyle=o1.s==='R'?'#ef4444':'#22c55e';ctx.fillRect(0,0,W,H); drawA(1,{x:400,y:H/2},200); drawA(2,{x:1200,y:H/2},200); } },
+            { n: "Саймон Говорит", d: "Повторяй за экраном 🧠 (WASD / Стрелки).", i:()=>{a1=[];for(let i=0;i<5;i++)a1.push(Math.floor(rnd(4))); tm=0; o1={i:0,f:false}; o2={i:0,f:false};}, u:()=>{ if(++tm>200){ let k1=-1,k2=-1; if(kw()){k1=0;keys['KeyW']=false;}if(ks()){k1=1;keys['KeyS']=false;}if(ka()){k1=2;keys['KeyA']=false;}if(kd()){k1=3;keys['KeyD']=false;} if(ku()){k2=0;keys['ArrowUp']=false;}if(kdn()){k2=1;keys['ArrowDown']=false;}if(kl()){k2=2;keys['ArrowLeft']=false;}if(kr()){k2=3;keys['ArrowRight']=false;} if(k1!==-1){if(k1===a1[o1.i]){o1.i++;spawnParticles(350,450,C1,5,'✨');doShake(2);}else o1.f=true;} if(k2!==-1){if(k2===a1[o2.i]){o2.i++;spawnParticles(1250,450,C2,5,'✨');doShake(2);}else o2.f=true;} if(o1.f&&o2.f)winRound(0);else if(o1.f||o2.i===5)winRound(2);else if(o2.f||o1.i===5)winRound(1); } }, r:()=>{ let c=['#22c55e','#ef4444','#eab308','#3b82f6']; if(tm<200){let s=Math.floor(tm/40);if(s<5)circ(W/2,H/2,200,c[a1[s]],100);} else{ txt(`${o1.i}/5`,200,120,70); txt(`${o2.i}/5`,W-200,120,70); circ(350,280,70,c[0],50);circ(350,620,70,c[1],50);circ(180,450,70,c[2],50);circ(520,450,70,c[3],50); circ(1250,280,70,c[0],50);circ(1250,620,70,c[1],50);circ(1080,450,70,c[2],50);circ(1420,450,70,c[3],50); } } },
+            { n: "Цветовая Реакция", d: "Жми W / Up ТОЛЬКО когда экран ЗЕЛЕНЫЙ 🟩!", i:()=>{tm=rnd(200)+150;o1={s:'R'};}, u:()=>{ if(o1.s==='R'){if(--tm<=0){o1.s='G';doShake(5);} if(kw()){keys['KeyW']=false;winRound(2);} if(ku()){keys['ArrowUp']=false;winRound(1);}}else{if(kw())winRound(1);if(ku())winRound(2);} }, r:()=>{ ctx.fillStyle=o1.s==='R'?'#ef4444':'#22c55e';ctx.fillRect(0,0,W,H); drawA(1,{x:400,y:H/2},200); drawA(2,{x:1200,y:H/2},200); } },
             { n: "Камень Ножницы Бумага", d: "P1: A=🪨, W=✂️, D=📄. P2: Влево, Вверх, Вправо.", i:()=>{o1={c:0};o2={c:0};tm=300;}, u:()=>{ if(o1.c===0){if(ka())o1.c=1;if(kw())o1.c=2;if(kd())o1.c=3;} if(o2.c===0){if(kl())o2.c=1;if(ku())o2.c=2;if(kr())o2.c=3;} if(o1.c!==0&&o2.c!==0){if(--tm<=0){if(o1.c===o2.c)winRound(0);else if((o1.c===1&&o2.c===2)||(o1.c===2&&o2.c===3)||(o1.c===3&&o2.c===1))winRound(1);else winRound(2);}} }, r:()=>{ if(o1.c===0)txt('Выбирай...',W/4,H/2+180,50);else txt(tm>0?'Готов!':(o1.c===1?'🪨':o1.c===2?'✂️':'📄'),W/4,H/2+180,80); if(o2.c===0)txt('Выбирай...',W*0.75,H/2+180,50);else txt(tm>0?'Готов!':(o2.c===1?'🪨':o2.c===2?'✂️':'📄'),W*0.75,H/2+180,80); drawA(1,{x:W/4,y:H/2-100},200); drawA(2,{x:W*0.75,y:H/2-100},200); } },
-            { n: "Слепой Лабиринт", d: "Стены 🧱 видны только при ударе. Иди в центр!", i:()=>{o1={x:150,y:150};o2={x:W-150,y:H-150};a1=[];for(let i=0;i<70;i++)a1.push({x:rnd(W-300)+150,y:rnd(H-300)+150,w:rnd(200)+70,h:rnd(200)+70});}, u:()=>{ let px1=o1.x,py1=o1.y,px2=o2.x,py2=o2.y; m1(o1,12); m2(o2,12); cl(o1); cl(o2); a1.forEach(w=>{ if(o1.x>w.x&&o1.x<w.x+w.w&&o1.y>w.y&&o1.y<w.y+w.h){o1.x=px1;o1.y=py1;w.v1=true;doShake(3);spawnParticles(o1.x,o1.y,'#fff',2);} if(o2.x>w.x&&o2.x<w.x+w.w&&o2.y>w.y&&o2.y<w.y+w.h){o2.x=px2;o2.y=py2;w.v2=true;doShake(3);spawnParticles(o2.x,o2.y,'#fff',2);} }); if(D(o1,{x:W/2,y:H/2})<70)winRound(1); else if(D(o2,{x:W/2,y:H/2})<70)winRound(2); }, r:()=>{ a1.forEach(w=>{if(w.v1)rect(w.x,w.y,w.w,w.h,C1,20,0.75);if(w.v2)rect(w.x,w.y,w.w,w.h,C2,20,0.75);}); rect(W/2-50,H/2-50,100,100,'#fff',40); E('🏆',W/2,H/2,60); drawA(1,o1,80); drawA(2,o2,80); } },
-            { n: "Дартс: Точный Бросок", d: "Останови маркер в центре 🎯! Space / Enter", i:()=>{o1={y:H/2,s:-1};o2={y:H/2,s:-1};tm=0;}, u:()=>{ o1.y=H/2+Math.sin(tm*0.1)*380; o2.y=H/2+Math.cos(tm*0.1)*380; tm++; if(sp()&&o1.s===-1){o1.s=Math.abs(o1.y-H/2);doShake(15);spawnParticles(300,o1.y,C1,30,'🎯');} if(en()&&o2.s===-1){o2.s=Math.abs(o2.y-H/2);doShake(15);spawnParticles(W-300,o2.y,C2,30,'🎯');} if(o1.s!==-1&&o2.s!==-1){setTimeout(()=>{if(o1.s<o2.s)winRound(1);else if(o2.s<o1.s)winRound(2);else winRound(0);},1000);} }, r:()=>{ circ(200,H/2,200,'#ef4444',40);circ(200,H/2,120,'#fff',0);circ(200,H/2,40,'#000',0); circ(W-200,H/2,200,'#ef4444',40);circ(W-200,H/2,120,'#fff',0);circ(W-200,H/2,40,'#000',0); line(200,o1.y,350,o1.y,C1,15,30); line(W-200,o2.y,W-350,o2.y,C2,15,30); if(o1.s!==-1)E('🎯',300,o1.y,60); if(o2.s!==-1)E('🎯',W-300,o2.y,60); } },
+            { n: "Слепой Лабиринт", d: "Стены 🧱 видны только при ударе. Иди в центр!", i:()=>{o1={x:150,y:150};o2={x:W-150,y:H-150};a1=[];for(let i=0;i<70;i++)a1.push({x:rnd(W-300)+150,y:rnd(H-300)+150,w:rnd(200)+70,h:rnd(200)+70});}, u:()=>{ let px1=o1.x,py1=o1.y,px2=o2.x,py2=o2.y; m1(o1,12); m2(o2,12); cl(o1); cl(o2); a1.forEach(w=>{ if(o1.x>w.x&&o1.x<w.x+w.w&&o1.y>w.y&&o1.y<w.y+w.h){o1.x=px1;o1.y=py1;w.v1=true;doShake(2);spawnParticles(o1.x,o1.y,'#fff',1);} if(o2.x>w.x&&o2.x<w.x+w.w&&o2.y>w.y&&o2.y<w.y+w.h){o2.x=px2;o2.y=py2;w.v2=true;doShake(2);spawnParticles(o2.x,o2.y,'#fff',1);} }); if(D(o1,{x:W/2,y:H/2})<70)winRound(1); else if(D(o2,{x:W/2,y:H/2})<70)winRound(2); }, r:()=>{ a1.forEach(w=>{if(w.v1)rect(w.x,w.y,w.w,w.h,C1,20,0.75);if(w.v2)rect(w.x,w.y,w.w,w.h,C2,20,0.75);}); rect(W/2-50,H/2-50,100,100,'#fff',40); E('🏆',W/2,H/2,60); drawA(1,o1,80); drawA(2,o2,80); } },
+            { n: "Дартс: Точный Бросок", d: "Останови маркер в центре 🎯! Space / Enter", i:()=>{o1={y:H/2,s:-1};o2={y:H/2,s:-1};tm=0;}, u:()=>{ o1.y=H/2+Math.sin(tm*0.1)*380; o2.y=H/2+Math.cos(tm*0.1)*380; tm++; if(sp()&&o1.s===-1){o1.s=Math.abs(o1.y-H/2);doShake(5);spawnParticles(300,o1.y,C1,10,'🎯');} if(en()&&o2.s===-1){o2.s=Math.abs(o2.y-H/2);doShake(5);spawnParticles(W-300,o2.y,C2,10,'🎯');} if(o1.s!==-1&&o2.s!==-1){setTimeout(()=>{if(o1.s<o2.s)winRound(1);else if(o2.s<o1.s)winRound(2);else winRound(0);},1000);} }, r:()=>{ circ(200,H/2,200,'#ef4444',40);circ(200,H/2,120,'#fff',0);circ(200,H/2,40,'#000',0); circ(W-200,H/2,200,'#ef4444',40);circ(W-200,H/2,120,'#fff',0);circ(W-200,H/2,40,'#000',0); line(200,o1.y,350,o1.y,C1,15,30); line(W-200,o2.y,W-350,o2.y,C2,15,30); if(o1.s!==-1)E('🎯',300,o1.y,60); if(o2.s!==-1)E('🎯',W-300,o2.y,60); } },
             { n: "Опасный Центр", d: "Пули 💥 летит из центра во все стороны! Выживи.", i:()=>{o1={x:200,y:H/2};o2={x:W-200,y:H/2};a1=[];tm=0;}, u:()=>{ m1(o1,14); m2(o2,14); cl(o1); cl(o2); if(++tm%4===0){let a=rnd(Math.PI*2);a1.push({x:W/2,y:H/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16});} let d1=false,d2=false; a1.forEach(b=>{b.x+=b.vx;b.y+=b.vy;if(D(b,o1)<50)d1=true;if(D(b,o2)<50)d2=true;}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ circ(W/2,H/2,80,'#a855f7',50); E('☠️',W/2,H/2,80); a1.forEach(b=>circ(b.x,b.y,16,'#ef4444',20)); drawA(1,o1,80); drawA(2,o2,80); } },
-            { n: "Передача Бомбы", d: "У кого 💣 когда выйдет время - тот проиграл!", i:()=>{o1={x:400,y:H/2};o2={x:1200,y:H/2};tm=rnd(300)+450;a1=Math.random()>.5?1:2;}, u:()=>{ m1(o1, a1===1?16:12); m2(o2, a1===2?16:12); cl(o1); cl(o2); if(D(o1,o2)<100){ a1=a1===1?2:1; spawnParticles(W/2,H/2,'#eab308',50,'💣'); doShake(20); o1.x=250; o2.x=W-250; o1.y=H/2; o2.y=H/2; } if(--tm<=0){ winRound(a1===1?2:1); } }, r:()=>{ drawA(1,o1,100); drawA(2,o2,100); if(a1===1)E('💣',o1.x,o1.y-100,80); if(a1===2)E('💣',o2.x,o2.y-100,80); txt(Math.ceil(tm/60),W/2,120,120,'#ef4444',40); } },
-            { n: "Крестики-Нолики", d: "Игра Разума 🧠. WASD/Стрелки, Space/Enter", i:()=>{a1=Array(9).fill(0);o1={c:0};o2={c:8};tm=1;}, u:()=>{ if(tm===1){if(kw()){o1.c=Math.max(0,o1.c-3);keys['KeyW']=false;}if(ks()){o1.c=Math.min(8,o1.c+3);keys['KeyS']=false;}if(ka()){o1.c=Math.max(0,o1.c-1);keys['KeyA']=false;}if(kd()){o1.c=Math.min(8,o1.c+1);keys['KeyD']=false;}if(sp()&&a1[o1.c]===0){a1[o1.c]=1;tm=2;keys['Space']=false;doShake(5);spawnParticles(W/2,H/2,C1,10);}}else{if(ku()){o2.c=Math.max(0,o2.c-3);keys['ArrowUp']=false;}if(kdn()){o2.c=Math.min(8,o2.c+3);keys['ArrowDown']=false;}if(kl()){o2.c=Math.max(0,o2.c-1);keys['ArrowLeft']=false;}if(kr()){o2.c=Math.min(8,o2.c+1);keys['ArrowRight']=false;}if(en()&&a1[o2.c]===0){a1[o2.c]=2;tm=1;keys['Enter']=false;doShake(5);spawnParticles(W/2,H/2,C2,10);}} const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; w.forEach(v=>{if(a1[v[0]]&&a1[v[0]]===a1[v[1]]&&a1[v[1]]===a1[v[2]])winRound(a1[v[0]]);}); if(!a1.includes(0))winRound(0); }, r:()=>{ const S=220,X=W/2-S*1.5,Y=H/2-S*1.5; for(let i=0;i<9;i++){let x=X+(i%3)*S,y=Y+Math.floor(i/3)*S;ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=4;ctx.strokeRect(x,y,S,S);if(a1[i]===1)drawA(1,{x:x+S/2,y:y+S/2-20},140);if(a1[i]===2)drawA(2,{x:x+S/2,y:y+S/2-20},140);} if(tm===1)rect(X+(o1.c%3)*S,Y+Math.floor(o1.c/3)*S,S,S,C1,40,0.5);if(tm===2)rect(X+(o2.c%3)*S,Y+Math.floor(o2.c/3)*S,S,S,C2,40,0.5); } },
-            { n: "Танцы", d: "Жми W/Up, когда нота 🎵 в круге!", i:()=>{o1={s:0};o2={s:0};a1=[];tm=900;}, u:()=>{ if(++tm%20===0)a1.push({y:-50}); let h1=false,h2=false; a1.forEach(n=>{ n.y+=12; if(n.y>H-250&&n.y<H-100){if(kw())h1=true;if(ku())h2=true;} }); if(kw()){keys['KeyW']=false;if(h1){o1.s++;spawnParticles(400,H-175,C1,20,'🎵');doShake(5);}else{o1.s--;doShake(8);}} if(ku()){keys['ArrowUp']=false;if(h2){o2.s++;spawnParticles(1200,H-175,C2,20,'🎵');doShake(5);}else{o2.s--;doShake(8);}} if(tm>900){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ circ(400,H-175,75,'#333',0); circ(1200,H-175,75,'#333',0); a1.forEach(n=>{circ(400,n.y,50,C1,30);circ(1200,n.y,50,C2,30);E('🎵',400,n.y,40);E('🎵',1200,n.y,40);}); txt(o1.s,400,150,90); txt(o2.s,1200,150,90); drawA(1,{x:150,y:H-175},110); drawA(2,{x:1450,y:H-175},110); } },
-            { n: "Король Горы", d: "Стой в центре 👑, чтобы набрать 100%!", i:()=>{o1={x:W/4,y:H/2,s:0};o2={x:W*.75,y:H/2,s:0};}, u:()=>{ m1(o1,14); m2(o2,14); cl(o1); cl(o2); if(D(o1,{x:W/2,y:H/2})<220){o1.s+=0.4; spawnParticles(W/2,H/2,C1,2);} if(D(o2,{x:W/2,y:H/2})<220){o2.s+=0.4; spawnParticles(W/2,H/2,C2,2);} if(o1.s>=100)winRound(1); else if(o2.s>=100)winRound(2); }, r:()=>{ circ(W/2,H/2,220,CN,60,0.35); E('👑',W/2,H/2,100); txt(Math.floor(o1.s)+'%',200,120,80); txt(Math.floor(o2.s)+'%',W-200,120,80); drawA(1,o1,100); drawA(2,o2,100); } },
+            { n: "Передача Бомбы", d: "У кого 💣 когда выйдет время - тот проиграл!", i:()=>{o1={x:400,y:H/2};o2={x:1200,y:H/2};tm=rnd(300)+450;a1=Math.random()>.5?1:2;}, u:()=>{ m1(o1, a1===1?16:12); m2(o2, a1===2?16:12); cl(o1); cl(o2); if(D(o1,o2)<100){ a1=a1===1?2:1; spawnParticles(W/2,H/2,'#eab308',10,'💣'); doShake(10); o1.x=250; o2.x=W-250; o1.y=H/2; o2.y=H/2; } if(--tm<=0){ winRound(a1===1?2:1); } }, r:()=>{ drawA(1,o1,100); drawA(2,o2,100); if(a1===1)E('💣',o1.x,o1.y-100,80); if(a1===2)E('💣',o2.x,o2.y-100,80); txt(Math.ceil(tm/60),W/2,120,120,'#ef4444',40); } },
+            { n: "Крестики-Нолики", d: "Игра Разума 🧠. WASD/Стрелки, Space/Enter", i:()=>{a1=Array(9).fill(0);o1={c:0};o2={c:8};tm=1;}, u:()=>{ if(tm===1){if(kw()){o1.c=Math.max(0,o1.c-3);keys['KeyW']=false;}if(ks()){o1.c=Math.min(8,o1.c+3);keys['KeyS']=false;}if(ka()){o1.c=Math.max(0,o1.c-1);keys['KeyA']=false;}if(kd()){o1.c=Math.min(8,o1.c+1);keys['KeyD']=false;}if(sp()&&a1[o1.c]===0){a1[o1.c]=1;tm=2;keys['Space']=false;doShake(3);spawnParticles(W/2,H/2,C1,5);}}else{if(ku()){o2.c=Math.max(0,o2.c-3);keys['ArrowUp']=false;}if(kdn()){o2.c=Math.min(8,o2.c+3);keys['ArrowDown']=false;}if(kl()){o2.c=Math.max(0,o2.c-1);keys['ArrowLeft']=false;}if(kr()){o2.c=Math.min(8,o2.c+1);keys['ArrowRight']=false;}if(en()&&a1[o2.c]===0){a1[o2.c]=2;tm=1;keys['Enter']=false;doShake(3);spawnParticles(W/2,H/2,C2,5);}} const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; w.forEach(v=>{if(a1[v[0]]&&a1[v[0]]===a1[v[1]]&&a1[v[1]]===a1[v[2]])winRound(a1[v[0]]);}); if(!a1.includes(0))winRound(0); }, r:()=>{ const S=220,X=W/2-S*1.5,Y=H/2-S*1.5; for(let i=0;i<9;i++){let x=X+(i%3)*S,y=Y+Math.floor(i/3)*S;ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=4;ctx.strokeRect(x,y,S,S);if(a1[i]===1)drawA(1,{x:x+S/2,y:y+S/2-20},140);if(a1[i]===2)drawA(2,{x:x+S/2,y:y+S/2-20},140);} if(tm===1)rect(X+(o1.c%3)*S,Y+Math.floor(o1.c/3)*S,S,S,C1,40,0.5);if(tm===2)rect(X+(o2.c%3)*S,Y+Math.floor(o2.c/3)*S,S,S,C2,40,0.5); } },
+            { n: "Танцы", d: "Жми W/Up, когда нота 🎵 в круге!", i:()=>{o1={s:0};o2={s:0};a1=[];tm=900;}, u:()=>{ if(++tm%20===0)a1.push({y:-50}); let h1=false,h2=false; a1.forEach(n=>{ n.y+=12; if(n.y>H-250&&n.y<H-100){if(kw())h1=true;if(ku())h2=true;} }); if(kw()){keys['KeyW']=false;if(h1){o1.s++;spawnParticles(400,H-175,C1,5,'🎵');doShake(3);}else{o1.s--;doShake(5);}} if(ku()){keys['ArrowUp']=false;if(h2){o2.s++;spawnParticles(1200,H-175,C2,5,'🎵');doShake(3);}else{o2.s--;doShake(5);}} if(tm>900){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ circ(400,H-175,75,'#333',0); circ(1200,H-175,75,'#333',0); a1.forEach(n=>{circ(400,n.y,50,C1,30);circ(1200,n.y,50,C2,30);E('🎵',400,n.y,40);E('🎵',1200,n.y,40);}); txt(o1.s,400,150,90); txt(o2.s,1200,150,90); drawA(1,{x:150,y:H-175},110); drawA(2,{x:1450,y:H-175},110); } },
+            { n: "Король Горы", d: "Стой в центре 👑, чтобы набрать 100%!", i:()=>{o1={x:W/4,y:H/2,s:0};o2={x:W*.75,y:H/2,s:0};}, u:()=>{ m1(o1,14); m2(o2,14); cl(o1); cl(o2); if(D(o1,{x:W/2,y:H/2})<220){o1.s+=0.4; spawnParticles(W/2,H/2,C1,1);} if(D(o2,{x:W/2,y:H/2})<220){o2.s+=0.4; spawnParticles(W/2,H/2,C2,1);} if(o1.s>=100)winRound(1); else if(o2.s>=100)winRound(2); }, r:()=>{ circ(W/2,H/2,220,CN,60,0.35); E('👑',W/2,H/2,100); txt(Math.floor(o1.s)+'%',200,120,80); txt(Math.floor(o2.s)+'%',W-200,120,80); drawA(1,o1,100); drawA(2,o2,100); } },
             // 31-40: Разнообразие и Экстрим
             { n: "Краски: Захват", d: "Бегай и закрась 🎨 поле! 15 сек.", i:()=>{o1={x:W/4,y:H/2};o2={x:W*.75,y:H/2};a1=Array(100).fill(0);tm=900;}, u:()=>{ m1(o1,22); m2(o2,22); cl(o1,0); cl(o2,0); let i1=Math.floor(o1.x/(W/10))+Math.floor(o1.y/(H/10))*10;a1[i1]=1; let i2=Math.floor(o2.x/(W/10))+Math.floor(o2.y/(H/10))*10;a1[i2]=2; if(--tm<=0){let s1=a1.filter(v=>v===1).length,s2=a1.filter(v=>v===2).length;if(s1>s2)winRound(1);else if(s2>s1)winRound(2);else winRound(0);} }, r:()=>{ for(let i=0;i<100;i++){if(a1[i]!==0)rect((i%10)*(W/10),Math.floor(i/10)*(H/10),W/10,H/10,a1[i]===1?C1:C2,0,0.85);} drawA(1,o1,90); drawA(2,o2,90); txt(Math.ceil(tm/60),W/2,120,100); } },
-            { n: "Гравитация", d: "Переворачивайся (W / Up). Уклоняйся от пуль 🔫.", i:()=>{o1={x:250,y:H-120,g:1};o2={x:W-250,y:H-120,g:1};a1=[];tm=0;}, u:()=>{ if(kw()){o1.g*=-1;keys['KeyW']=false;spawnParticles(o1.x,o1.y,C1,15);doShake(6);} if(ku()){o2.g*=-1;keys['ArrowUp']=false;spawnParticles(o2.x,o2.y,C2,15);doShake(6);} o1.y+=o1.g*32; o2.y+=o2.g*32; cl(o1,120); cl(o2,120); if(++tm%10===0)a1.push({x:Math.random()>.5?-50:W+50,y:rnd(H-240)+120,vx:Math.random()>.5?22:-22}); let d1=false,d2=false; a1.forEach(b=>{b.x+=b.vx;if(D(b,o1)<70)d1=true;if(D(b,o2)<70)d2=true;}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ line(0,120,W,120,'#555',15); line(0,H-120,W,H-120,'#555',15); drawA(1,o1,100); drawA(2,o2,100); a1.forEach(b=>{circ(b.x,b.y,20,CN,25);E('🔫',b.x,b.y,30);}); } },
-            { n: "Свинки-Воришки", d: "Укради 🪙 из центра и отнеси на базу! 3 раза.", i:()=>{o1={x:200,y:H/2,h:false,s:0};o2={x:W-200,y:H/2,h:false,s:0};o3={x:W/2,y:H/2};}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); if(!o1.h&&!o2.h){if(D(o1,o3)<80)o1.h=true;else if(D(o2,o3)<80)o2.h=true;} if(o1.h&&o1.x<300){o1.s++;o1.h=false;spawnParticles(200,H/2,CN,50,'🪙');doShake(15);} if(o2.h&&o2.x>W-300){o2.s++;o2.h=false;spawnParticles(W-200,H/2,CN,50,'🪙');doShake(15);} if(D(o1,o2)<100){if(o1.h){o1.h=false;o2.h=true;o1.x-=140;o2.x+=140;doShake(10);}else if(o2.h){o2.h=false;o1.h=true;o1.x+=140;o2.x-=140;doShake(10);}} if(o1.s>=3)winRound(1);else if(o2.s>=3)winRound(2); }, r:()=>{ rect(0,0,300,H,C1,0,0.35); rect(W-300,0,300,H,C2,0,0.35); if(!o1.h&&!o2.h)E('🪙',o3.x,o3.y,80); drawA(1,o1,100); drawA(2,o2,100); if(o1.h)E('🪙',o1.x,o1.y-80,60); if(o2.h)E('🪙',o2.x,o2.y-80,60); txt(`${o1.s}/3`,150,120,100); txt(`${o2.s}/3`,W-150,120,100); } },
+            { n: "Гравитация", d: "Переворачивайся (W / Up). Уклоняйся от пуль 🔫.", i:()=>{o1={x:250,y:H-120,g:1};o2={x:W-250,y:H-120,g:1};a1=[];tm=0;}, u:()=>{ if(kw()){o1.g*=-1;keys['KeyW']=false;spawnParticles(o1.x,o1.y,C1,5);doShake(3);} if(ku()){o2.g*=-1;keys['ArrowUp']=false;spawnParticles(o2.x,o2.y,C2,5);doShake(3);} o1.y+=o1.g*32; o2.y+=o2.g*32; cl(o1,120); cl(o2,120); if(++tm%10===0)a1.push({x:Math.random()>.5?-50:W+50,y:rnd(H-240)+120,vx:Math.random()>.5?22:-22}); let d1=false,d2=false; a1.forEach(b=>{b.x+=b.vx;if(D(b,o1)<70)d1=true;if(D(b,o2)<70)d2=true;}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ line(0,120,W,120,'#555',15); line(0,H-120,W,H-120,'#555',15); drawA(1,o1,100); drawA(2,o2,100); a1.forEach(b=>{circ(b.x,b.y,20,CN,25);E('🔫',b.x,b.y,30);}); } },
+            { n: "Свинки-Воришки", d: "Укради 🪙 из центра и отнеси на базу! 3 раза.", i:()=>{o1={x:200,y:H/2,h:false,s:0};o2={x:W-200,y:H/2,h:false,s:0};o3={x:W/2,y:H/2};}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); if(!o1.h&&!o2.h){if(D(o1,o3)<80)o1.h=true;else if(D(o2,o3)<80)o2.h=true;} if(o1.h&&o1.x<300){o1.s++;o1.h=false;spawnParticles(200,H/2,CN,15,'🪙');doShake(5);} if(o2.h&&o2.x>W-300){o2.s++;o2.h=false;spawnParticles(W-200,H/2,CN,15,'🪙');doShake(5);} if(D(o1,o2)<100){if(o1.h){o1.h=false;o2.h=true;o1.x-=140;o2.x+=140;doShake(5);}else if(o2.h){o2.h=false;o1.h=true;o1.x+=140;o2.x-=140;doShake(5);}} if(o1.s>=3)winRound(1);else if(o2.s>=3)winRound(2); }, r:()=>{ rect(0,0,300,H,C1,0,0.35); rect(W-300,0,300,H,C2,0,0.35); if(!o1.h&&!o2.h)E('🪙',o3.x,o3.y,80); drawA(1,o1,100); drawA(2,o2,100); if(o1.h)E('🪙',o1.x,o1.y-80,60); if(o2.h)E('🪙',o2.x,o2.y-80,60); txt(`${o1.s}/3`,150,120,100); txt(`${o2.s}/3`,W-150,120,100); } },
             { n: "Мусорный Шторм", d: "Метеориты 🪨 летят со всех сторон. Уклоняйся!", i:()=>{o1={x:W/4,y:H/2};o2={x:W*.75,y:H/2};a1=[];tm=0;}, u:()=>{ m1(o1,14); m2(o2,14); cl(o1); cl(o2); if(++tm%5===0){let s=rnd(4); if(s<1)a1.push({x:rnd(W),y:-50,vx:(rnd(1)-.5)*16,vy:16}); else if(s<2)a1.push({x:rnd(W),y:H+50,vx:(rnd(1)-.5)*16,vy:-16}); else if(s<3)a1.push({x:-50,y:rnd(H),vx:16,vy:(rnd(1)-.5)*16}); else a1.push({x:W+50,y:rnd(H),vx:-16,vy:(rnd(1)-.5)*16});} let d1=false,d2=false; a1.forEach(m=>{m.x+=m.vx;m.y+=m.vy;if(D(m,o1)<60)d1=true;if(D(m,o2)<60)d2=true;}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ drawA(1,o1,90); drawA(2,o2,90); a1.forEach(m=>E('🪨',m.x,m.y,50)); } },
             { n: "Каскад", d: "Падай вниз и не задень лазеры ⚡️!", i:()=>{o1={x:400};o2={x:1200};a1=[];tm=0;}, u:()=>{ if(ka())o1.x-=16; if(kd())o1.x+=16; if(kl())o2.x-=16; if(kr())o2.x+=16; cl(o1); cl(o2); if(++tm%15===0)a1.push({y:H+50,x:rnd(W),w:rnd(600)+200}); let d1=false,d2=false; a1.forEach(b=>{b.y-=16;if(b.y<180&&b.y>80&&Math.abs(o1.x-(b.x+b.w/2))<b.w/2+45)d1=true;if(b.y<180&&b.y>80&&Math.abs(o2.x-(b.x+b.w/2))<b.w/2+45)d2=true;}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); }, r:()=>{ drawA(1,{x:o1.x,y:120},90); drawA(2,{x:o2.x,y:120},90); a1.forEach(b=>rect(b.x,b.y,b.w,35,'#a855f7',25)); } },
-            { n: "Воздушный Бой", d: "Самолеты ✈️! Управляй W/Up, стреляй Space/Enter", i:()=>{o1={x:300,y:H/2,a:0,cd:0};o2={x:1300,y:H/2,a:Math.PI,cd:0};a1=[];a2=[];}, u:()=>{ if(ka())o1.a-=0.14;if(kd())o1.a+=0.14; if(kl())o2.a-=0.14;if(kr())o2.a+=0.14; let s1=kw()?22:12, s2=ku()?22:12; o1.x+=Math.cos(o1.a)*s1;o1.y+=Math.sin(o1.a)*s1; o2.x+=Math.cos(o2.a)*s2;o2.y+=Math.sin(o2.a)*s2; [o1,o2].forEach(o=>{if(o.x<0)o.x+=W;if(o.x>W)o.x-=W;if(o.y<0)o.y+=H;if(o.y>H)o.y-=H;}); if(o1.cd>0)o1.cd--;if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x,y:o1.y,vx:Math.cos(o1.a)*35,vy:Math.sin(o1.a)*35});o1.cd=10;doShake(4);} if(en()&&o2.cd===0){a2.push({x:o2.x,y:o2.y,vx:Math.cos(o2.a)*35,vy:Math.sin(o2.a)*35});o2.cd=10;doShake(4);} a1.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});a2.forEach(b=>{b.x+=b.vx;b.y+=b.vy;}); a1=a1.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H&&D(b,o2)>70?true:(winRound(1),false)); a2=a2.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H&&D(b,o1)>70?true:(winRound(2),false)); }, r:()=>{ drawA(1,o1,90); drawA(2,o2,90); a1.forEach(b=>{circ(b.x,b.y,12,C1,25);addTrail(b.x,b.y,C1,12);}); a2.forEach(b=>{circ(b.x,b.y,12,C2,25);addTrail(b.x,b.y,C2,12);}); } },
-            { n: "Минное Поле", d: "Иди ВПРАВО. Не наступи на мины 💣!", i:()=>{o1={x:150,y:150};o2={x:150,y:H-150};a1=[];for(let i=0;i<60;i++)a1.push({x:rnd(W-300)+150,y:rnd(H-300)+150});}, u:()=>{ m1(o1,11); m2(o2,11); cl(o1); cl(o2); let d1=false,d2=false; a1.forEach(m=>{if(D(m,o1)<55){d1=true;spawnParticles(m.x,m.y,'#ef4444',40,'💥');doShake(10);}if(D(m,o2)<55){d2=true;spawnParticles(m.x,m.y,'#ef4444',40,'💥');doShake(10);}}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); if(o1.x>W-150)winRound(1);else if(o2.x>W-150)winRound(2); }, r:()=>{ rect(W-150,0,150,H,'#22c55e',30,0.5); drawA(1,o1,90); drawA(2,o2,90); a1.forEach(m=>E('💣',m.x,m.y,50)); } },
-            { n: "Сбор Яблок", d: "Лови только 🍎 фрукты, избегай бомб!", i:()=>{o1={x:400,y:H-100,s:0};o2={x:1200,y:H-100,s:0};a1=[];tm=900;}, u:()=>{ if(ka())o1.x-=22;if(kd())o1.x+=22; if(kl())o2.x-=22;if(kr())o2.x+=22; cl(o1); cl(o2); if(Math.random()<0.15)a1.push({x:rnd(W-100)+50,y:-20,e:Math.random()>.25?'🍎':'💣'}); a1=a1.filter(a=>{a.y+=13;if(a.y>H-140&&Math.abs(a.x-o1.x)<80){if(a.e==='🍎')o1.s++;else {o1.s-=3;doShake(12);}spawnParticles(a.x,a.y,a.e==='🍎'?'#22c55e':'#ef4444',15,a.e);return false;}if(a.y>H-140&&Math.abs(a.x-o2.x)<80){if(a.e==='🍎')o2.s++;else {o2.s-=3;doShake(12);}spawnParticles(a.x,a.y,a.e==='🍎'?'#22c55e':'#ef4444',15,a.e);return false;}return a.y<H;}); if(--tm<=0){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(a=>E(a.e,a.x,a.y,60)); drawA(1,o1,140); drawA(2,o2,140); txt(Math.ceil(tm/60),W/2,120,100); ctx.fillStyle=C1;txt(o1.s,150,120,100); ctx.fillStyle=C2;txt(o2.s,W-150,120,100); } },
-            { n: "Стена Смерти", d: "Стена двигается! Спамь Space / Enter чтобы выжить.", i:()=>{o1={p:W/2};tm=900;}, u:()=>{ if(sp()){o1.p+=35;keys['Space']=false;spawnParticles(o1.p,rnd(H),C1,8,'⚡️');doShake(5);} if(en()){o1.p-=35;keys['Enter']=false;spawnParticles(o1.p,rnd(H),C2,8,'⚡️');doShake(5);} if(--tm<=0||o1.p<0||o1.p>W){if(o1.p>W/2)winRound(1);else if(o1.p<W/2)winRound(2);else winRound(0);} }, r:()=>{ rect(0,0,o1.p,H,C1,0,0.5); rect(o1.p,0,W-o1.p,H,C2,0,0.5); line(o1.p,0,o1.p,H,'#fff',40,60); txt(Math.ceil(tm/60),W/2,150,120); drawA(1,{x:o1.p/2,y:H/2},300); drawA(2,{x:o1.p+(W-o1.p)/2,y:H/2},300); } },
-            { n: "Отравитель", d: "Касайся кубов чтобы закрасить их в свой цвет! 🎨", i:()=>{a1=[];for(let i=0;i<50;i++)a1.push({x:rnd(W-150)+75,y:rnd(H-150)+75,c:0});o1={x:150,y:H/2};o2={x:1450,y:H/2};tm=900;}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); a1.forEach(b=>{if(D(b,o1)<85){b.c=1;spawnParticles(b.x,b.y,C1,2);} if(D(b,o2)<85){b.c=2;spawnParticles(b.x,b.y,C2,2);}}); if(--tm<=0){let s1=a1.filter(b=>b.c===1).length, s2=a1.filter(b=>b.c===2).length; if(s1>s2)winRound(1);else if(s2>s1)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(b=>{rect(b.x-35,b.y-35,70,70,b.c===1?C1:b.c===2?C2:'#555',20,0.95);}); drawA(1,o1,100); drawA(2,o2,100); txt(Math.ceil(tm/60),W/2,120,100); } }
+            { n: "Воздушный Бой", d: "Самолеты ✈️! Управляй W/Up, стреляй Space/Enter", i:()=>{o1={x:300,y:H/2,a:0,cd:0};o2={x:1300,y:H/2,a:Math.PI,cd:0};a1=[];a2=[];}, u:()=>{ if(ka())o1.a-=0.14;if(kd())o1.a+=0.14; if(kl())o2.a-=0.14;if(kr())o2.a+=0.14; let s1=kw()?22:12, s2=ku()?22:12; o1.x+=Math.cos(o1.a)*s1;o1.y+=Math.sin(o1.a)*s1; o2.x+=Math.cos(o2.a)*s2;o2.y+=Math.sin(o2.a)*s2; [o1,o2].forEach(o=>{if(o.x<0)o.x+=W;if(o.x>W)o.x-=W;if(o.y<0)o.y+=H;if(o.y>H)o.y-=H;}); if(o1.cd>0)o1.cd--;if(o2.cd>0)o2.cd--; if(sp()&&o1.cd===0){a1.push({x:o1.x,y:o1.y,vx:Math.cos(o1.a)*35,vy:Math.sin(o1.a)*35});o1.cd=10;doShake(2);} if(en()&&o2.cd===0){a2.push({x:o2.x,y:o2.y,vx:Math.cos(o2.a)*35,vy:Math.sin(o2.a)*35});o2.cd=10;doShake(2);} a1.forEach(b=>{b.x+=b.vx;b.y+=b.vy;});a2.forEach(b=>{b.x+=b.vx;b.y+=b.vy;}); a1=a1.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H&&D(b,o2)>70?true:(winRound(1),false)); a2=a2.filter(b=>b.x>0&&b.x<W&&b.y>0&&b.y<H&&D(b,o1)>70?true:(winRound(2),false)); }, r:()=>{ drawA(1,o1,90); drawA(2,o2,90); a1.forEach(b=>{circ(b.x,b.y,12,C1,25);addTrail(b.x,b.y,C1,12);}); a2.forEach(b=>{circ(b.x,b.y,12,C2,25);addTrail(b.x,b.y,C2,12);}); } },
+            { n: "Минное Поле", d: "Иди ВПРАВО. Не наступи на мины 💣!", i:()=>{o1={x:150,y:150};o2={x:150,y:H-150};a1=[];for(let i=0;i<60;i++)a1.push({x:rnd(W-300)+150,y:rnd(H-300)+150});}, u:()=>{ m1(o1,11); m2(o2,11); cl(o1); cl(o2); let d1=false,d2=false; a1.forEach(m=>{if(D(m,o1)<55){d1=true;spawnParticles(m.x,m.y,'#ef4444',15,'💥');doShake(5);}if(D(m,o2)<55){d2=true;spawnParticles(m.x,m.y,'#ef4444',15,'💥');doShake(5);}}); if(d1&&d2)winRound(0);else if(d1)winRound(2);else if(d2)winRound(1); if(o1.x>W-150)winRound(1);else if(o2.x>W-150)winRound(2); }, r:()=>{ rect(W-150,0,150,H,'#22c55e',30,0.5); drawA(1,o1,90); drawA(2,o2,90); a1.forEach(m=>E('💣',m.x,m.y,50)); } },
+            { n: "Сбор Яблок", d: "Лови только 🍎 фрукты, избегай бомб!", i:()=>{o1={x:400,y:H-100,s:0};o2={x:1200,y:H-100,s:0};a1=[];tm=900;}, u:()=>{ if(ka())o1.x-=22;if(kd())o1.x+=22; if(kl())o2.x-=22;if(kr())o2.x+=22; cl(o1); cl(o2); if(Math.random()<0.15)a1.push({x:rnd(W-100)+50,y:-20,e:Math.random()>.25?'🍎':'💣'}); a1=a1.filter(a=>{a.y+=13;if(a.y>H-140&&Math.abs(a.x-o1.x)<80){if(a.e==='🍎')o1.s++;else {o1.s-=3;doShake(5);}spawnParticles(a.x,a.y,a.e==='🍎'?'#22c55e':'#ef4444',5,a.e);return false;}if(a.y>H-140&&Math.abs(a.x-o2.x)<80){if(a.e==='🍎')o2.s++;else {o2.s-=3;doShake(5);}spawnParticles(a.x,a.y,a.e==='🍎'?'#22c55e':'#ef4444',5,a.e);return false;}return a.y<H;}); if(--tm<=0){if(o1.s>o2.s)winRound(1);else if(o2.s>o1.s)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(a=>E(a.e,a.x,a.y,60)); drawA(1,o1,140); drawA(2,o2,140); txt(Math.ceil(tm/60),W/2,120,100); ctx.fillStyle=C1;txt(o1.s,150,120,100); ctx.fillStyle=C2;txt(o2.s,W-150,120,100); } },
+            { n: "Стена Смерти", d: "Стена двигается! Спамь Space / Enter чтобы выжить.", i:()=>{o1={p:W/2};tm=900;}, u:()=>{ if(sp()){o1.p+=35;keys['Space']=false;spawnParticles(o1.p,rnd(H),C1,3,'⚡️');doShake(2);} if(en()){o1.p-=35;keys['Enter']=false;spawnParticles(o1.p,rnd(H),C2,3,'⚡️');doShake(2);} if(--tm<=0||o1.p<0||o1.p>W){if(o1.p>W/2)winRound(1);else if(o1.p<W/2)winRound(2);else winRound(0);} }, r:()=>{ rect(0,0,o1.p,H,C1,0,0.5); rect(o1.p,0,W-o1.p,H,C2,0,0.5); line(o1.p,0,o1.p,H,'#fff',40,60); txt(Math.ceil(tm/60),W/2,150,120); drawA(1,{x:o1.p/2,y:H/2},300); drawA(2,{x:o1.p+(W-o1.p)/2,y:H/2},300); } },
+            { n: "Отравитель", d: "Касайся кубов чтобы закрасить их в свой цвет! 🎨", i:()=>{a1=[];for(let i=0;i<50;i++)a1.push({x:rnd(W-150)+75,y:rnd(H-150)+75,c:0});o1={x:150,y:H/2};o2={x:1450,y:H/2};tm=900;}, u:()=>{ m1(o1,16); m2(o2,16); cl(o1); cl(o2); a1.forEach(b=>{if(D(b,o1)<85){b.c=1;} if(D(b,o2)<85){b.c=2;}}); if(--tm<=0){let s1=a1.filter(b=>b.c===1).length, s2=a1.filter(b=>b.c===2).length; if(s1>s2)winRound(1);else if(s2>s1)winRound(2);else winRound(0);} }, r:()=>{ a1.forEach(b=>{rect(b.x-35,b.y-35,70,70,b.c===1?C1:b.c===2?C2:'#555',20,0.95);}); drawA(1,o1,100); drawA(2,o2,100); txt(Math.ceil(tm/60),W/2,120,100); } }
         ];
 
-        // Клонируем 40 базовых игр для создания 80 вариаций (Хардкор-версии с удвоенной скоростью)
         const baseGamesCount = games.length;
         for(let i=0; i < baseGamesCount; i++) {
             let baseGame = games[i];
@@ -555,7 +409,6 @@
             });
         }
 
-        // --- ИНИЦИАЛИЗАЦИЯ МЕНЮ И СЕТИ ---
         window.initMenu = () => {
             const grid = document.getElementById('gameGrid');
             games.forEach((g, i) => {
@@ -589,11 +442,11 @@
             document.getElementById('menu').classList.remove('hidden');
         };
 
-        window.backToMenu = () => { if (isMultiplayer && conn && conn.open) conn.send({ type: 'returnToMenu' }); window.executeBackToMenu(); };
+        window.backToMenu = () => { if (isMultiplayer && socket) socket.emit('gameData', { type: 'returnToMenu' }); window.executeBackToMenu(); };
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; scale = Math.min(canvas.width / W, canvas.height / H); }
 
-        // --- СЕТЕВАЯ ЛОГИКА (P2P PEERJS) ---
         window.createRoom = () => {
+            if(!socket) { alert("Сервер недоступен! Игра работает в локальном режиме."); return; }
             document.getElementById('netModalTitle').innerText = "Создание...";
             document.getElementById('netModalDesc').classList.remove('hidden');
             document.getElementById('netRoomCode').innerText = "---";
@@ -602,36 +455,66 @@
             document.getElementById('loader').classList.remove('hidden');
             document.getElementById('netModal').style.display = 'flex';
 
-            const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
-            try {
-                peer = new Peer('neon-ru-v80-' + randomCode, peerConfig);
-                peer.on('open', (id) => {
-                    document.getElementById('netModalTitle').innerText = "Ожидание друга...";
-                    document.getElementById('netRoomCode').innerText = randomCode;
-                    document.getElementById('loader').classList.add('hidden');
-                    isHost = true; isMultiplayer = true;
-                    document.getElementById('localLegend').classList.add('hidden');
-                    document.getElementById('onlineLegend').classList.remove('hidden');
-                    document.getElementById('onlineLegend').innerText = "Онлайн (P2P): ВЫ ХОСТ. ВЫБЕРИТЕ ИГРУ.";
-                });
-                peer.on('connection', (connection) => {
-                    conn = connection;
-                    conn.on('open', () => { conn.send({ type: 'init', p1A: window.p1A, p1N: window.p1N }); window.closeNetModal(); });
-                    conn.on('data', (data) => {
-                        if (data.type === 'inputs') remoteKeys = data.inputs;
-                        if (data.type === 'profile') { window.p2A = data.a; window.p2N = data.n; window.updateScoreAvatars(); }
-                        if (data.type === 'returnToMenu') window.executeBackToMenu();
-                        if (data.type === 'aiChat') document.getElementById('aiCommentary').innerText = `«${data.text}»`;
-                    });
-                });
-                peer.on('error', (err) => {
-                    document.getElementById('netModalTitle').innerText = "Ошибка сети"; document.getElementById('netRoomCode').innerText = "ERR"; document.getElementById('loader').classList.add('hidden');
-                    document.getElementById('netModalDesc').innerHTML = "WebSockets заблокированы.<br><br><b>Откройте скачанный HTML файл напрямую в браузере.</b>";
-                });
-            } catch (e) { alert("Ошибка инициализации P2P. Попробуйте скачать файл."); }
+            socket.emit('createRoom');
         };
 
+        if(socket) {
+            socket.on('roomCreated', (id) => {
+                document.getElementById('netModalTitle').innerText = "Ожидание друга...";
+                document.getElementById('netRoomCode').innerText = id;
+                document.getElementById('loader').classList.add('hidden');
+                isHost = true; isMultiplayer = true;
+                document.getElementById('localLegend').classList.add('hidden');
+                document.getElementById('onlineLegend').classList.remove('hidden');
+                document.getElementById('onlineLegend').innerText = "Онлайн (Сервер): ВЫ ХОСТ. ВЫБЕРИТЕ ИГРУ.";
+            });
+
+            socket.on('clientJoined', () => {
+                socket.emit('gameData', { type: 'init', p1A: window.p1A, p1N: window.p1N }); 
+                window.closeNetModal();
+            });
+
+            socket.on('joinedRoom', (id) => {
+                isHost = false; isMultiplayer = true;
+                socket.emit('gameData', { type: 'profile', a: window.p1A, n: window.p1N }); 
+                document.getElementById('localLegend').classList.add('hidden');
+                document.getElementById('onlineLegend').classList.remove('hidden');
+                document.getElementById('onlineLegend').innerText = "Онлайн (Сервер): Ожидайте выбора игры хостом...";
+                document.getElementById('p2CustomBlock').classList.add('hidden');
+                window.closeNetModal();
+            });
+
+            socket.on('gameData', (data) => {
+                if (data.type === 'init') { window.p2A = window.p1A; window.p2N = window.p1N; window.p1A = data.p1A; window.p1N = data.p1N; window.updateScoreAvatars(); }
+                if (data.type === 'sync') applyNetworkState(data.state);
+                if (data.type === 'returnToMenu') window.executeBackToMenu();
+                if (data.type === 'profile') { 
+                    if(isHost) { window.p2A = data.a; window.p2N = data.n; }
+                    else { window.p1A = data.a; window.p1N = data.n; }
+                    window.updateScoreAvatars(); 
+                }
+                if (data.type === 'inputs') remoteKeys = data.inputs;
+            });
+
+            socket.on('errorMsg', (msg) => {
+                alert(msg);
+                document.getElementById('netActionBtn').innerText = "Присоединиться";
+                document.getElementById('netActionBtn').classList.remove('hidden');
+                document.getElementById('loader').classList.add('hidden');
+            });
+
+            socket.on('peerDisconnected', () => {
+                alert("Соперник отключился от комнаты!");
+                window.executeBackToMenu();
+                document.getElementById('localLegend').classList.remove('hidden');
+                document.getElementById('onlineLegend').classList.add('hidden');
+                isMultiplayer = false; isHost = false;
+                document.getElementById('p2CustomBlock').classList.remove('hidden');
+            });
+        }
+
         window.showJoinModal = () => {
+            if(!socket) { alert("Сервер недоступен!"); return; }
             document.getElementById('netModalTitle').innerText = "Войти в игру";
             document.getElementById('loader').classList.add('hidden');
             document.getElementById('netModalDesc').classList.add('hidden');
@@ -647,48 +530,25 @@
             document.getElementById('netActionBtn').classList.add('hidden');
             document.getElementById('loader').classList.remove('hidden');
             document.getElementById('netModalTitle').innerText = "Подключение...";
-            try {
-                peer = new Peer(peerConfig);
-                peer.on('open', () => {
-                    conn = peer.connect('neon-ru-v80-' + id);
-                    conn.on('open', () => {
-                        isHost = false; isMultiplayer = true;
-                        conn.send({ type: 'profile', a: window.p1A, n: window.p1N });
-                        document.getElementById('localLegend').classList.add('hidden');
-                        document.getElementById('onlineLegend').classList.remove('hidden');
-                        document.getElementById('onlineLegend').innerText = "Онлайн (P2P): Ожидайте выбора игры хостом...";
-                        document.getElementById('p2CustomBlock').classList.add('hidden');
-                        window.closeNetModal();
-                    });
-                    conn.on('data', (data) => {
-                        if (data.type === 'init') { window.p2A = window.p1A; window.p2N = window.p1N; window.p1A = data.p1A; window.p1N = data.p1N; window.updateScoreAvatars(); }
-                        if (data.type === 'sync') applyNetworkState(data.state);
-                        if (data.type === 'returnToMenu') window.executeBackToMenu();
-                        if (data.type === 'profile') { window.p1A = data.a; window.p1N = data.n; window.updateScoreAvatars(); }
-                        if (data.type === 'aiChat') document.getElementById('aiCommentary').innerText = `«${data.text}»`;
-                    });
-                    conn.on('error', () => { alert("Ошибка связи!"); window.closeNetModal(); });
-                });
-                peer.on('error', () => { alert("Комната не найдена!"); window.closeNetModal(); });
-            } catch (e) { alert("Ошибка P2P. Откройте файл напрямую."); }
+            socket.emit('joinRoom', id);
         };
 
         window.closeNetModal = () => { document.getElementById('netModal').style.display = 'none'; };
 
         function sendNetState() {
-            if(!isMultiplayer || !isHost || !conn || !conn.open) return;
-            syncCounter++; if(syncCounter % 2 !== 0) return; // Ускоренная синхронизация (30fps)
-            conn.send({
+            if(!isMultiplayer || !isHost || !socket) return;
+            syncCounter++; if(syncCounter % 2 !== 0) return; 
+            socket.emit('gameData', {
                 type: 'sync',
                 state: { cId: currentId, gs: gameState, p1: p1Score, p2: p2Score, o1: o1, o2: o2, o3: o3, a1: a1, a2: a2, gt: globalTm, sh: shake, t: titleEl.innerText, d: descEl.innerText, c: countdownEl.innerText, pr: particles.slice(0,8) }
             });
         }
 
         function sendNetInputs() {
-            if(!isMultiplayer || isHost || !conn || !conn.open) return;
+            if(!isMultiplayer || isHost || !socket) return;
             let current = { up: keys['ArrowUp']||keys['KeyW'], dn: keys['ArrowDown']||keys['KeyS'], lf: keys['ArrowLeft']||keys['KeyA'], rt: keys['ArrowRight']||keys['KeyD'], en: keys['Enter']||keys['Space'] };
             let str = JSON.stringify(current);
-            if(str !== lastInputsStr) { lastInputsStr = str; conn.send({ type: 'inputs', inputs: current }); }
+            if(str !== lastInputsStr) { lastInputsStr = str; socket.emit('gameData', { type: 'inputs', inputs: current }); }
         }
 
         function applyNetworkState(s) {
@@ -698,7 +558,6 @@
             }
             gameState = s.gs; currentId = s.cId; p1Score = s.p1; p2Score = s.p2;
             
-            // Плавная интерполяция
             if(o1.x && s.o1.x) { o1.x += (s.o1.x - o1.x)*0.5; o1.y += (s.o1.y - o1.y)*0.5; } else o1 = s.o1||{};
             if(o2.x && s.o2.x) { o2.x += (s.o2.x - o2.x)*0.5; o2.y += (s.o2.y - o2.y)*0.5; } else o2 = s.o2||{};
             
