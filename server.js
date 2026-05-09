@@ -8,61 +8,78 @@ const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-// Раздаем статические файлы из папки public
+// Раздаем клиентскую часть (фронтенд)
 app.use(express.static('public'));
 
-// Хранилище активных комнат
+// Хранилище комнат
 const rooms = {};
 
 io.on('connection', (socket) => {
     console.log(`[+] Игрок подключился: ${socket.id}`);
 
-    // Создание новой комнаты (Хост)
-    socket.on('createRoom', () => {
+    // Хост создает комнату
+    socket.on('createRoom', (profile) => {
         const roomId = Math.floor(1000 + Math.random() * 9000).toString();
-        rooms[roomId] = { host: socket.id, client: null };
+        rooms[roomId] = { 
+            host: socket.id, 
+            client: null,
+            p1Profile: profile, // Профиль хоста
+            p2Profile: null     // Профиль клиента (пока пусто)
+        };
         
         socket.join(roomId);
         socket.emit('roomCreated', roomId);
-        console.log(`[ROOM] Создана комната ${roomId} хостом ${socket.id}`);
+        console.log(`[ROOM] Создана комната ${roomId}. Хост: ${profile.name}`);
     });
 
-    // Подключение к комнате (Клиент)
-    socket.on('joinRoom', (roomId) => {
+    // Клиент (друг) присоединяется к комнате
+    socket.on('joinRoom', (data) => {
+        const { roomId, profile } = data;
+        
         if (rooms[roomId]) {
             if (!rooms[roomId].client) {
                 rooms[roomId].client = socket.id;
+                rooms[roomId].p2Profile = profile; // Сохраняем профиль друга
                 socket.join(roomId);
-                socket.emit('joinedRoom', roomId);
-                io.to(rooms[roomId].host).emit('clientJoined');
-                console.log(`[ROOM] Игрок ${socket.id} вошел в комнату ${roomId}`);
+                
+                // Отправляем другу успешный вход и ОБА профиля, чтобы он знал, кто хост
+                socket.emit('joinedRoom', { 
+                    p1Profile: rooms[roomId].p1Profile, 
+                    p2Profile: rooms[roomId].p2Profile 
+                });
+                
+                // Отправляем хосту профиль подключившегося друга
+                io.to(rooms[roomId].host).emit('clientJoined', { 
+                    p2Profile: rooms[roomId].p2Profile 
+                });
+                
+                console.log(`[ROOM] ${profile.name} зашел в комнату ${roomId}`);
             } else {
-                socket.emit('errorMsg', 'Комната уже полна! Бой идет.');
+                socket.emit('errorMsg', 'Комната уже полна! Идет бой.');
             }
         } else {
-            socket.emit('errorMsg', 'Комната с таким кодом не найдена!');
+            socket.emit('errorMsg', 'Комната не найдена! Проверьте код.');
         }
     });
 
-    // Ретрансляция игровых данных (Координаты, нажатия клавиш и т.д.)
+    // Идеальная маршрутизация игровых данных (Синхронизация физики и кнопок)
     socket.on('gameData', (data) => {
-        // Ищем комнату игрока (индекс 1, т.к. индекс 0 это сам socket.id)
-        const room = Array.from(socket.rooms)[1];
+        const room = Array.from(socket.rooms).find(r => r !== socket.id);
         if (room) {
-            // Отправляем данные всем в комнате, КРОМЕ отправителя
+            // Отправляем всем в комнате, кроме самого отправителя
             socket.to(room).emit('gameData', data);
         }
     });
 
-    // Обработка отключения
+    // Отключение игрока
     socket.on('disconnect', () => {
         console.log(`[-] Игрок отключился: ${socket.id}`);
-        // Ищем комнату игрока и уничтожаем её, сообщая второму игроку
         for (const roomId in rooms) {
             if (rooms[roomId].host === socket.id || rooms[roomId].client === socket.id) {
+                // Предупреждаем второго игрока, что лобби распалось
                 socket.to(roomId).emit('peerDisconnected');
                 delete rooms[roomId];
-                console.log(`[ROOM] Комната ${roomId} удалена из-за отключения игрока`);
+                console.log(`[ROOM] Комната ${roomId} закрыта.`);
             }
         }
     });
@@ -70,5 +87,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Сервер Неоновых Дуэлей запущен на порту ${PORT}`);
+    console.log(`🚀 Сервер Неоновых Дуэлей PRO запущен на порту ${PORT}`);
 });
