@@ -1,7 +1,7 @@
 {
-  "name": "neon-duels-server",
-  "version": "1.0.0",
-  "description": "Dedicated Server for Neon Duels 80",
+  "name": "neon-duels-ultimate",
+  "version": "3.0.0",
+  "description": "Ultimate Multiplayer Server for Neon Duels",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
