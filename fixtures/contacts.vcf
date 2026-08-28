@@ -1,0 +1,360 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Ковалёв;Артём;;;
+FN:Артём Ковалёв
+TEL;TYPE=CELL:+70002140000
+EMAIL;TYPE=INTERNET:artem.kovalev@example.com
+ADR;TYPE=HOME:;;;Москва;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Литвинова;Мария;;;
+FN:Мария Литвинова
+TEL;TYPE=CELL:+70002143607
+EMAIL;TYPE=INTERNET:mariya.litvinova@example.com
+ADR;TYPE=HOME:;;;Санкт-Петербург;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Ершов;Данил;;;
+FN:Данил Ершов
+TEL;TYPE=CELL:+70002147214
+EMAIL;TYPE=INTERNET:danil.ershov@example.com
+ADR;TYPE=HOME:;;;Казань;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Панкратова;Ольга;;;
+FN:Ольга Панкратова
+TEL;TYPE=CELL:+70002150821
+EMAIL;TYPE=INTERNET:olga.pankratova@example.com
+ADR;TYPE=HOME:;;;Новосибирск;;;
+CATEGORIES:спортзал
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Сафин;Ильдар;;;
+FN:Ильдар Сафин
+TEL;TYPE=CELL:+70002154428
+EMAIL;TYPE=INTERNET:ildar.safin@example.com
+ADR;TYPE=HOME:;;;Екатеринбург;;;
+CATEGORIES:университет
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Дорохова;Ксения;;;
+FN:Ксения Дорохова
+TEL;TYPE=CELL:+70002158035
+EMAIL;TYPE=INTERNET:kseniya.dorohova@example.com
+ADR;TYPE=HOME:;;;Нижний Новгород;;;
+CATEGORIES:соседи
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Белов;Егор;;;
+FN:Егор Белов
+TEL;TYPE=CELL:+70002161642
+EMAIL;TYPE=INTERNET:egor.belov@example.com
+ADR;TYPE=HOME:;;;Уфа;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Ивашкина;Полина;;;
+FN:Полина Ивашкина
+TEL;TYPE=CELL:+70002165249
+EMAIL;TYPE=INTERNET:polina.ivashkina@example.com
+ADR;TYPE=HOME:;;;Самара;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Юсупов;Тимур;;;
+FN:Тимур Юсупов
+TEL;TYPE=CELL:+70002168856
+EMAIL;TYPE=INTERNET:timur.yusupov@example.com
+ADR;TYPE=HOME:;;;Краснодар;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Грачёва;Алиса;;;
+FN:Алиса Грачёва
+TEL;TYPE=CELL:+70002172463
+EMAIL;TYPE=INTERNET:alisa.gracheva@example.com
+ADR;TYPE=HOME:;;;Владивосток;;;
+CATEGORIES:спортзал
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Терентьев;Никита;;;
+FN:Никита Терентьев
+TEL;TYPE=CELL:+70002176070
+EMAIL;TYPE=INTERNET:nikita.terentev@example.com
+ADR;TYPE=HOME:;;;Москва;;;
+CATEGORIES:университет
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Малахова;Вероника;;;
+FN:Вероника Малахова
+TEL;TYPE=CELL:+70002179677
+EMAIL;TYPE=INTERNET:veronika.malahova@example.com
+ADR;TYPE=HOME:;;;Санкт-Петербург;;;
+CATEGORIES:соседи
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Гимаев;Руслан;;;
+FN:Руслан Гимаев
+TEL;TYPE=CELL:+70002183284
+EMAIL;TYPE=INTERNET:ruslan.gimaev@example.com
+ADR;TYPE=HOME:;;;Казань;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Радченко;София;;;
+FN:София Радченко
+TEL;TYPE=CELL:+70002186891
+EMAIL;TYPE=INTERNET:sofiya.radchenko@example.com
+ADR;TYPE=HOME:;;;Новосибирск;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Соловьёв;Матвей;;;
+FN:Матвей Соловьёв
+TEL;TYPE=CELL:+70002190498
+EMAIL;TYPE=INTERNET:matvey.solovev@example.com
+ADR;TYPE=HOME:;;;Екатеринбург;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Аверина;Дарья;;;
+FN:Дарья Аверина
+TEL;TYPE=CELL:+70002194105
+EMAIL;TYPE=INTERNET:darya.averina@example.com
+ADR;TYPE=HOME:;;;Нижний Новгород;;;
+CATEGORIES:спортзал
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Плотников;Кирилл;;;
+FN:Кирилл Плотников
+TEL;TYPE=CELL:+70002197712
+EMAIL;TYPE=INTERNET:kirill.plotnikov@example.com
+ADR;TYPE=HOME:;;;Уфа;;;
+CATEGORIES:университет
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Лещёва;Ева;;;
+FN:Ева Лещёва
+TEL;TYPE=CELL:+70002201319
+EMAIL;TYPE=INTERNET:eva.lescheva@example.com
+ADR;TYPE=HOME:;;;Самара;;;
+CATEGORIES:соседи
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Кузьмин;Захар;;;
+FN:Захар Кузьмин
+TEL;TYPE=CELL:+70002204926
+EMAIL;TYPE=INTERNET:zahar.kuzmin@example.com
+ADR;TYPE=HOME:;;;Краснодар;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Барсукова;Ульяна;;;
+FN:Ульяна Барсукова
+TEL;TYPE=CELL:+70002208533
+EMAIL;TYPE=INTERNET:ulyana.barsukova@example.com
+ADR;TYPE=HOME:;;;Владивосток;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Дьячков;Лев;;;
+FN:Лев Дьячков
+TEL;TYPE=CELL:+70002212140
+EMAIL;TYPE=INTERNET:lev.dyachkov@example.com
+ADR;TYPE=HOME:;;;Москва;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Немцова;Милана;;;
+FN:Милана Немцова
+TEL;TYPE=CELL:+70002215747
+EMAIL;TYPE=INTERNET:milana.nemcova@example.com
+ADR;TYPE=HOME:;;;Санкт-Петербург;;;
+CATEGORIES:спортзал
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Орлов;Савелий;;;
+FN:Савелий Орлов
+TEL;TYPE=CELL:+70002219354
+EMAIL;TYPE=INTERNET:saveliy.orlov@example.com
+ADR;TYPE=HOME:;;;Казань;;;
+CATEGORIES:университет
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Стрельцова;Аглая;;;
+FN:Аглая Стрельцова
+TEL;TYPE=CELL:+70002222961
+EMAIL;TYPE=INTERNET:aglaya.strelcova@example.com
+ADR;TYPE=HOME:;;;Новосибирск;;;
+CATEGORIES:соседи
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Гаврилов;Демид;;;
+FN:Демид Гаврилов
+TEL;TYPE=CELL:+70002226568
+EMAIL;TYPE=INTERNET:demid.gavrilov@example.com
+ADR;TYPE=HOME:;;;Екатеринбург;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Ясенева;Таисия;;;
+FN:Таисия Ясенева
+TEL;TYPE=CELL:+70002230175
+EMAIL;TYPE=INTERNET:taisiya.yaseneva@example.com
+ADR;TYPE=HOME:;;;Нижний Новгород;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Шилов;Марк;;;
+FN:Марк Шилов
+TEL;TYPE=CELL:+70002233782
+EMAIL;TYPE=INTERNET:mark.shilov@example.com
+ADR;TYPE=HOME:;;;Уфа;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Круглова;Злата;;;
+FN:Злата Круглова
+TEL;TYPE=CELL:+70002237389
+EMAIL;TYPE=INTERNET:zlata.kruglova@example.com
+ADR;TYPE=HOME:;;;Самара;;;
+CATEGORIES:спортзал
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Тихонов;Ярослав;;;
+FN:Ярослав Тихонов
+TEL;TYPE=CELL:+70002240996
+EMAIL;TYPE=INTERNET:yaroslav.tihonov@example.com
+ADR;TYPE=HOME:;;;Краснодар;;;
+CATEGORIES:университет
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Мещерская;Варвара;;;
+FN:Варвара Мещерская
+TEL;TYPE=CELL:+70002244603
+EMAIL;TYPE=INTERNET:varvara.mescherskaya@example.com
+ADR;TYPE=HOME:;;;Владивосток;;;
+CATEGORIES:соседи
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Волошин;Глеб;;;
+FN:Глеб Волошин
+TEL;TYPE=CELL:+70002248210
+EMAIL;TYPE=INTERNET:gleb.voloshin@example.com
+ADR;TYPE=HOME:;;;Москва;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Агапова;Нина;;;
+FN:Нина Агапова
+TEL;TYPE=CELL:+70002251817
+EMAIL;TYPE=INTERNET:nina.agapova@example.com
+ADR;TYPE=HOME:;;;Санкт-Петербург;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Ткачук;Роман;;;
+FN:Роман Ткачук
+TEL;TYPE=CELL:+70002255424
+EMAIL;TYPE=INTERNET:roman.tkachuk@example.com
+ADR;TYPE=HOME:;;;Казань;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Березина;Инга;;;
+FN:Инга Березина
+TEL;TYPE=CELL:+70002259031
+EMAIL;TYPE=INTERNET:inga.berezina@example.com
+ADR;TYPE=HOME:;;;Новосибирск;;;
+CATEGORIES:спортзал
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Логвинов;Богдан;;;
+FN:Богдан Логвинов
+TEL;TYPE=CELL:+70002262638
+EMAIL;TYPE=INTERNET:bogdan.logvinov@example.com
+ADR;TYPE=HOME:;;;Екатеринбург;;;
+CATEGORIES:университет
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Хвостова;Лада;;;
+FN:Лада Хвостова
+TEL;TYPE=CELL:+70002266245
+EMAIL;TYPE=INTERNET:lada.hvostova@example.com
+ADR;TYPE=HOME:;;;Нижний Новгород;;;
+CATEGORIES:соседи
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Емельянов;Влад;;;
+FN:Влад Емельянов
+TEL;TYPE=CELL:+70002269852
+EMAIL;TYPE=INTERNET:vlad.emelyanov@example.com
+ADR;TYPE=HOME:;;;Уфа;;;
+CATEGORIES:друзья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Насырова;Аида;;;
+FN:Аида Насырова
+TEL;TYPE=CELL:+70002273459
+EMAIL;TYPE=INTERNET:aida.nasyrova@example.com
+ADR;TYPE=HOME:;;;Самара;;;
+CATEGORIES:работа
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Заславский;Пётр;;;
+FN:Пётр Заславский
+TEL;TYPE=CELL:+70002277066
+EMAIL;TYPE=INTERNET:petr.zaslavskiy@example.com
+ADR;TYPE=HOME:;;;Краснодар;;;
+CATEGORIES:семья
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Одинцова;Юна;;;
+FN:Юна Одинцова
+TEL;TYPE=CELL:+70002280673
+EMAIL;TYPE=INTERNET:yuna.odincova@example.com
+ADR;TYPE=HOME:;;;Владивосток;;;
+CATEGORIES:спортзал
+END:VCARD

@@ -1,0 +1,402 @@
+[
+  {
+    "id": 1,
+    "firstName": "Артём",
+    "lastName": "Ковалёв",
+    "fullName": "Артём Ковалёв",
+    "phone": "+7 (000) 214-00-00",
+    "email": "artem.kovalev@example.com",
+    "city": "Москва",
+    "group": "друзья"
+  },
+  {
+    "id": 2,
+    "firstName": "Мария",
+    "lastName": "Литвинова",
+    "fullName": "Мария Литвинова",
+    "phone": "+7 (000) 214-36-07",
+    "email": "mariya.litvinova@example.com",
+    "city": "Санкт-Петербург",
+    "group": "работа"
+  },
+  {
+    "id": 3,
+    "firstName": "Данил",
+    "lastName": "Ершов",
+    "fullName": "Данил Ершов",
+    "phone": "+7 (000) 214-72-14",
+    "email": "danil.ershov@example.com",
+    "city": "Казань",
+    "group": "семья"
+  },
+  {
+    "id": 4,
+    "firstName": "Ольга",
+    "lastName": "Панкратова",
+    "fullName": "Ольга Панкратова",
+    "phone": "+7 (000) 215-08-21",
+    "email": "olga.pankratova@example.com",
+    "city": "Новосибирск",
+    "group": "спортзал"
+  },
+  {
+    "id": 5,
+    "firstName": "Ильдар",
+    "lastName": "Сафин",
+    "fullName": "Ильдар Сафин",
+    "phone": "+7 (000) 215-44-28",
+    "email": "ildar.safin@example.com",
+    "city": "Екатеринбург",
+    "group": "университет"
+  },
+  {
+    "id": 6,
+    "firstName": "Ксения",
+    "lastName": "Дорохова",
+    "fullName": "Ксения Дорохова",
+    "phone": "+7 (000) 215-80-35",
+    "email": "kseniya.dorohova@example.com",
+    "city": "Нижний Новгород",
+    "group": "соседи"
+  },
+  {
+    "id": 7,
+    "firstName": "Егор",
+    "lastName": "Белов",
+    "fullName": "Егор Белов",
+    "phone": "+7 (000) 216-16-42",
+    "email": "egor.belov@example.com",
+    "city": "Уфа",
+    "group": "друзья"
+  },
+  {
+    "id": 8,
+    "firstName": "Полина",
+    "lastName": "Ивашкина",
+    "fullName": "Полина Ивашкина",
+    "phone": "+7 (000) 216-52-49",
+    "email": "polina.ivashkina@example.com",
+    "city": "Самара",
+    "group": "работа"
+  },
+  {
+    "id": 9,
+    "firstName": "Тимур",
+    "lastName": "Юсупов",
+    "fullName": "Тимур Юсупов",
+    "phone": "+7 (000) 216-88-56",
+    "email": "timur.yusupov@example.com",
+    "city": "Краснодар",
+    "group": "семья"
+  },
+  {
+    "id": 10,
+    "firstName": "Алиса",
+    "lastName": "Грачёва",
+    "fullName": "Алиса Грачёва",
+    "phone": "+7 (000) 217-24-63",
+    "email": "alisa.gracheva@example.com",
+    "city": "Владивосток",
+    "group": "спортзал"
+  },
+  {
+    "id": 11,
+    "firstName": "Никита",
+    "lastName": "Терентьев",
+    "fullName": "Никита Терентьев",
+    "phone": "+7 (000) 217-60-70",
+    "email": "nikita.terentev@example.com",
+    "city": "Москва",
+    "group": "университет"
+  },
+  {
+    "id": 12,
+    "firstName": "Вероника",
+    "lastName": "Малахова",
+    "fullName": "Вероника Малахова",
+    "phone": "+7 (000) 217-96-77",
+    "email": "veronika.malahova@example.com",
+    "city": "Санкт-Петербург",
+    "group": "соседи"
+  },
+  {
+    "id": 13,
+    "firstName": "Руслан",
+    "lastName": "Гимаев",
+    "fullName": "Руслан Гимаев",
+    "phone": "+7 (000) 218-32-84",
+    "email": "ruslan.gimaev@example.com",
+    "city": "Казань",
+    "group": "друзья"
+  },
+  {
+    "id": 14,
+    "firstName": "София",
+    "lastName": "Радченко",
+    "fullName": "София Радченко",
+    "phone": "+7 (000) 218-68-91",
+    "email": "sofiya.radchenko@example.com",
+    "city": "Новосибирск",
+    "group": "работа"
+  },
+  {
+    "id": 15,
+    "firstName": "Матвей",
+    "lastName": "Соловьёв",
+    "fullName": "Матвей Соловьёв",
+    "phone": "+7 (000) 219-04-98",
+    "email": "matvey.solovev@example.com",
+    "city": "Екатеринбург",
+    "group": "семья"
+  },
+  {
+    "id": 16,
+    "firstName": "Дарья",
+    "lastName": "Аверина",
+    "fullName": "Дарья Аверина",
+    "phone": "+7 (000) 219-41-05",
+    "email": "darya.averina@example.com",
+    "city": "Нижний Новгород",
+    "group": "спортзал"
+  },
+  {
+    "id": 17,
+    "firstName": "Кирилл",
+    "lastName": "Плотников",
+    "fullName": "Кирилл Плотников",
+    "phone": "+7 (000) 219-77-12",
+    "email": "kirill.plotnikov@example.com",
+    "city": "Уфа",
+    "group": "университет"
+  },
+  {
+    "id": 18,
+    "firstName": "Ева",
+    "lastName": "Лещёва",
+    "fullName": "Ева Лещёва",
+    "phone": "+7 (000) 220-13-19",
+    "email": "eva.lescheva@example.com",
+    "city": "Самара",
+    "group": "соседи"
+  },
+  {
+    "id": 19,
+    "firstName": "Захар",
+    "lastName": "Кузьмин",
+    "fullName": "Захар Кузьмин",
+    "phone": "+7 (000) 220-49-26",
+    "email": "zahar.kuzmin@example.com",
+    "city": "Краснодар",
+    "group": "друзья"
+  },
+  {
+    "id": 20,
+    "firstName": "Ульяна",
+    "lastName": "Барсукова",
+    "fullName": "Ульяна Барсукова",
+    "phone": "+7 (000) 220-85-33",
+    "email": "ulyana.barsukova@example.com",
+    "city": "Владивосток",
+    "group": "работа"
+  },
+  {
+    "id": 21,
+    "firstName": "Лев",
+    "lastName": "Дьячков",
+    "fullName": "Лев Дьячков",
+    "phone": "+7 (000) 221-21-40",
+    "email": "lev.dyachkov@example.com",
+    "city": "Москва",
+    "group": "семья"
+  },
+  {
+    "id": 22,
+    "firstName": "Милана",
+    "lastName": "Немцова",
+    "fullName": "Милана Немцова",
+    "phone": "+7 (000) 221-57-47",
+    "email": "milana.nemcova@example.com",
+    "city": "Санкт-Петербург",
+    "group": "спортзал"
+  },
+  {
+    "id": 23,
+    "firstName": "Савелий",
+    "lastName": "Орлов",
+    "fullName": "Савелий Орлов",
+    "phone": "+7 (000) 221-93-54",
+    "email": "saveliy.orlov@example.com",
+    "city": "Казань",
+    "group": "университет"
+  },
+  {
+    "id": 24,
+    "firstName": "Аглая",
+    "lastName": "Стрельцова",
+    "fullName": "Аглая Стрельцова",
+    "phone": "+7 (000) 222-29-61",
+    "email": "aglaya.strelcova@example.com",
+    "city": "Новосибирск",
+    "group": "соседи"
+  },
+  {
+    "id": 25,
+    "firstName": "Демид",
+    "lastName": "Гаврилов",
+    "fullName": "Демид Гаврилов",
+    "phone": "+7 (000) 222-65-68",
+    "email": "demid.gavrilov@example.com",
+    "city": "Екатеринбург",
+    "group": "друзья"
+  },
+  {
+    "id": 26,
+    "firstName": "Таисия",
+    "lastName": "Ясенева",
+    "fullName": "Таисия Ясенева",
+    "phone": "+7 (000) 223-01-75",
+    "email": "taisiya.yaseneva@example.com",
+    "city": "Нижний Новгород",
+    "group": "работа"
+  },
+  {
+    "id": 27,
+    "firstName": "Марк",
+    "lastName": "Шилов",
+    "fullName": "Марк Шилов",
+    "phone": "+7 (000) 223-37-82",
+    "email": "mark.shilov@example.com",
+    "city": "Уфа",
+    "group": "семья"
+  },
+  {
+    "id": 28,
+    "firstName": "Злата",
+    "lastName": "Круглова",
+    "fullName": "Злата Круглова",
+    "phone": "+7 (000) 223-73-89",
+    "email": "zlata.kruglova@example.com",
+    "city": "Самара",
+    "group": "спортзал"
+  },
+  {
+    "id": 29,
+    "firstName": "Ярослав",
+    "lastName": "Тихонов",
+    "fullName": "Ярослав Тихонов",
+    "phone": "+7 (000) 224-09-96",
+    "email": "yaroslav.tihonov@example.com",
+    "city": "Краснодар",
+    "group": "университет"
+  },
+  {
+    "id": 30,
+    "firstName": "Варвара",
+    "lastName": "Мещерская",
+    "fullName": "Варвара Мещерская",
+    "phone": "+7 (000) 224-46-03",
+    "email": "varvara.mescherskaya@example.com",
+    "city": "Владивосток",
+    "group": "соседи"
+  },
+  {
+    "id": 31,
+    "firstName": "Глеб",
+    "lastName": "Волошин",
+    "fullName": "Глеб Волошин",
+    "phone": "+7 (000) 224-82-10",
+    "email": "gleb.voloshin@example.com",
+    "city": "Москва",
+    "group": "друзья"
+  },
+  {
+    "id": 32,
+    "firstName": "Нина",
+    "lastName": "Агапова",
+    "fullName": "Нина Агапова",
+    "phone": "+7 (000) 225-18-17",
+    "email": "nina.agapova@example.com",
+    "city": "Санкт-Петербург",
+    "group": "работа"
+  },
+  {
+    "id": 33,
+    "firstName": "Роман",
+    "lastName": "Ткачук",
+    "fullName": "Роман Ткачук",
+    "phone": "+7 (000) 225-54-24",
+    "email": "roman.tkachuk@example.com",
+    "city": "Казань",
+    "group": "семья"
+  },
+  {
+    "id": 34,
+    "firstName": "Инга",
+    "lastName": "Березина",
+    "fullName": "Инга Березина",
+    "phone": "+7 (000) 225-90-31",
+    "email": "inga.berezina@example.com",
+    "city": "Новосибирск",
+    "group": "спортзал"
+  },
+  {
+    "id": 35,
+    "firstName": "Богдан",
+    "lastName": "Логвинов",
+    "fullName": "Богдан Логвинов",
+    "phone": "+7 (000) 226-26-38",
+    "email": "bogdan.logvinov@example.com",
+    "city": "Екатеринбург",
+    "group": "университет"
+  },
+  {
+    "id": 36,
+    "firstName": "Лада",
+    "lastName": "Хвостова",
+    "fullName": "Лада Хвостова",
+    "phone": "+7 (000) 226-62-45",
+    "email": "lada.hvostova@example.com",
+    "city": "Нижний Новгород",
+    "group": "соседи"
+  },
+  {
+    "id": 37,
+    "firstName": "Влад",
+    "lastName": "Емельянов",
+    "fullName": "Влад Емельянов",
+    "phone": "+7 (000) 226-98-52",
+    "email": "vlad.emelyanov@example.com",
+    "city": "Уфа",
+    "group": "друзья"
+  },
+  {
+    "id": 38,
+    "firstName": "Аида",
+    "lastName": "Насырова",
+    "fullName": "Аида Насырова",
+    "phone": "+7 (000) 227-34-59",
+    "email": "aida.nasyrova@example.com",
+    "city": "Самара",
+    "group": "работа"
+  },
+  {
+    "id": 39,
+    "firstName": "Пётр",
+    "lastName": "Заславский",
+    "fullName": "Пётр Заславский",
+    "phone": "+7 (000) 227-70-66",
+    "email": "petr.zaslavskiy@example.com",
+    "city": "Краснодар",
+    "group": "семья"
+  },
+  {
+    "id": 40,
+    "firstName": "Юна",
+    "lastName": "Одинцова",
+    "fullName": "Юна Одинцова",
+    "phone": "+7 (000) 228-06-73",
+    "email": "yuna.odincova@example.com",
+    "city": "Владивосток",
+    "group": "спортзал"
+  }
+]
